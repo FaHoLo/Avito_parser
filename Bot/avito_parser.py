@@ -31,7 +31,20 @@ def parse_avito_products_update(url) -> list:
     avito_page = get_avito_soup_page(url)
     products = collect_products(avito_page)
     product_infos = parse_product_infos(products)
-    return db_aps.find_new_and_updated_products(product_infos)
+    new_products, updated_products = db_aps.find_new_and_updated_products(product_infos)
+    for product in new_products:
+        product['img_url'] = get_product_image_url(product['product_url'])
+    for product in updated_products:
+        product['img_url'] = get_product_image_url(product['product_url'])
+    return new_products, updated_products
+
+
+def get_product_image_url(product_url):
+    response = requests.get(product_url)
+    response.raise_for_status()
+    img_url = 'https:{}'.format(
+        BeautifulSoup(response.text, 'lxml').select_one('.gallery-img-frame')['data-url'])
+    return img_url
 
 
 def get_avito_soup_page(url: str) -> BeautifulSoup:
@@ -69,15 +82,14 @@ def parse_product_infos(products: list) -> list:
     '''
     Parse info about products -> list of dicts
 
-    dict keys: id, title, price, img_url, product_url, pub_date
+    dict keys: product_id, title, price, product_url, pub_date
     '''
     product_infos = []
     for product in products:
         product_info = {
-            'id': product['data-item-id'],
+            'product_id': product['data-item-id'],
             'title': product.select_one('.snippet-link')['title'],
             'price': product.select_one('.snippet-price').text.strip(),
-            'img_url': product.select_one('img')['src'],
             'product_url': 'https://www.avito.ru{}'.format(
                 product.select_one('.snippet-link')['href']
             ),
