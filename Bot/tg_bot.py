@@ -67,8 +67,6 @@ async def send_product_updates(product_infos, is_new_products=False):
         db_aps.store_watched_product_info(product)
 
 
-
-
 @dispatcher.errors_handler()
 async def errors_handler(update, exception):
     logger_name = 'avito_bot_logger'
