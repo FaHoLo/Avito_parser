@@ -48,12 +48,12 @@ async def start_parser(bot, sleep_time=1800):
 async def check_user_searches(user_id, user_searches, bot):
     for url in user_searches:
         new_products, updated_products = parse_avito_products_update(url, user_id)
-        await send_product_updates(bot, user_id, updated_products)
-        await send_product_updates(bot, user_id, new_products, is_new_products=True)
+        await send_product_updates(bot, user_id, updated_products, url)
+        await send_product_updates(bot, user_id, new_products, url, is_new_products=True)
         await sleep(randint(10, 20))
 
 
-async def send_product_updates(bot, chat_id, product_infos, is_new_products=False):
+async def send_product_updates(bot, chat_id, product_infos, search_url, is_new_products=False):
     message_start = 'Объявление обновилось'
     if is_new_products:
         message_start = 'Появилось новое объявление'
@@ -67,7 +67,7 @@ async def send_product_updates(bot, chat_id, product_infos, is_new_products=Fals
         Ссылка: {product['product_url']}
         ''')
         await bot.send_photo(chat_id, product['img_url'], caption=message)
-        db_aps.store_watched_product_info(product, chat_id)
+        db_aps.store_watched_product_info(product, chat_id, search_url)
 
 
 def parse_avito_products_update(url, user_id) -> list:

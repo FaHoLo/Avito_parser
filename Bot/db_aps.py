@@ -41,7 +41,7 @@ def find_new_and_updated_products(product_infos: list, user_id) -> list:
     return new_products, updated_products
 
 
-def store_watched_product_info(product_info: dict, user_id: str) -> None:
+def store_watched_product_info(product_info: dict, user_id: str, search_url: str) -> None:
     '''Store product into redis db'''
     db = get_database_connection()
     db.hmset(
@@ -50,6 +50,7 @@ def store_watched_product_info(product_info: dict, user_id: str) -> None:
             'product_id': product_info['product_id'],
             'title': product_info['title'],
             'price':  product_info['price'],
+            'search_url': search_url,
         }
     )
 
@@ -140,4 +141,21 @@ def remove_search(user_id: str, search_number: str):
         }
         db.delete(db_key)
         db.hmset(db_key, updated_searches)
+    remove_products_by_search_number(user_id, search_number)
     return 'Поиск удален'
+
+
+def remove_products_by_search_number(user_id: str, search_number: str):
+    db = get_database_connection()
+    search_url = db.hget('{}{}'.format(DB_SEARCH_PREFIX, user_id), search_number)
+    keys = db.keys()
+    user_product_keys = [
+        key for key in keys
+        if key.startswith(f'{DB_PRODUCT_PREFIX}:{user_id}'.encode())
+    ]
+    keys_for_deletion = []
+    for key in user_product_keys:
+        if db.hget(key, 'search_url') == search_url:
+            keys_for_deletion.append(key)
+
+    db.delete(*keys_for_deletion)
