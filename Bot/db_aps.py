@@ -44,7 +44,14 @@ def find_new_and_updated_products(product_infos: list) -> list:
 def store_watched_product_info(product_info: dict) -> None:
     '''Store product into redis db'''
     db = get_database_connection()
-    db.hmset('{}{}'.format(DB_PRODUCT_PREFIX, product_info['product_id']), product_info)
+    db.hmset(
+        '{}{}'.format(DB_PRODUCT_PREFIX, product_info['product_id']),
+        {
+            'product_id': product_info['product_id'],
+            'product_title': product_info['product_title'],
+            'price':  product_info['price'],
+        }
+    )
 
 
 def collect_searches() -> dict:
