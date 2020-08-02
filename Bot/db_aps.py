@@ -26,13 +26,13 @@ def get_database_connection() -> redis.Redis:
     return _database
 
 
-def find_new_and_updated_products(product_infos: list) -> list:
+def find_new_and_updated_products(product_infos: list, user_id) -> list:
     '''Find new and updated products'''
     db = get_database_connection()
     new_products = []
     updated_products = []
     for product in product_infos:
-        db_product = db.hgetall('{}{}'.format(DB_PRODUCT_PREFIX, product['product_id']))
+        db_product = db.hgetall('{}{}{}'.format(DB_PRODUCT_PREFIX, user_id, product['product_id']))
         if not db_product:
             new_products.append(product)
             continue
@@ -41,14 +41,14 @@ def find_new_and_updated_products(product_infos: list) -> list:
     return new_products, updated_products
 
 
-def store_watched_product_info(product_info: dict) -> None:
+def store_watched_product_info(product_info: dict, user_id: str) -> None:
     '''Store product into redis db'''
     db = get_database_connection()
     db.hmset(
-        '{}{}'.format(DB_PRODUCT_PREFIX, product_info['product_id']),
+        '{}{}{}'.format(DB_PRODUCT_PREFIX, user_id, product_info['product_id']),
         {
             'product_id': product_info['product_id'],
-            'product_title': product_info['product_title'],
+            'title': product_info['title'],
             'price':  product_info['price'],
         }
     )

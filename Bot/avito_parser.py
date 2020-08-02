@@ -47,7 +47,7 @@ async def start_parser(bot, sleep_time=1800):
 
 async def check_user_searches(user_id, user_searches, bot):
     for url in user_searches:
-        new_products, updated_products = parse_avito_products_update(url)
+        new_products, updated_products = parse_avito_products_update(url, user_id)
         await send_product_updates(bot, user_id, updated_products)
         await send_product_updates(bot, user_id, new_products, is_new_products=True)
         await sleep(randint(10, 20))
@@ -67,15 +67,15 @@ async def send_product_updates(bot, chat_id, product_infos, is_new_products=Fals
         Ссылка: {product['product_url']}
         ''')
         await bot.send_photo(chat_id, product['img_url'], caption=message)
-        db_aps.store_watched_product_info(product)
+        db_aps.store_watched_product_info(product, chat_id)
 
 
-def parse_avito_products_update(url) -> list:
+def parse_avito_products_update(url, user_id) -> list:
     '''Parse avito url and find new and updated products'''
     avito_page = get_avito_soup_page(url)
     products = collect_products(avito_page)
     product_infos = parse_product_infos(products)
-    new_products, updated_products = db_aps.find_new_and_updated_products(product_infos)
+    new_products, updated_products = db_aps.find_new_and_updated_products(product_infos, user_id)
     for product in new_products:
         product['img_url'] = get_product_image_url(product['product_url'])
     for product in updated_products:
