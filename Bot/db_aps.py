@@ -58,8 +58,10 @@ def store_watched_product_info(product_info: dict, user_id: str, search_url: str
 def collect_searches() -> dict:
     '''Collect all existing searches from db'''
     db = get_database_connection()
-    db_keys = [key.decode('utf-8') for key in db.keys()]
-    search_keys = [key for key in db_keys if key.startswith(DB_SEARCH_PREFIX)]
+    search_pattern = f'{DB_SEARCH_PREFIX}*'
+    # All scan methods returns cursor position and then list of keys: (0, [key1, key2])
+    search_keys = db.scan(0, match=search_pattern, count=10000)[1]
+    search_keys = [key.decode('utf-8') for key in search_keys]
     searches = {}
     for key in search_keys:
         user_id = key.split(':')[-1]
@@ -78,9 +80,8 @@ async def run_expired_products_collector(sleep_time=43200):
 async def find_expired_products() -> None:
     '''Find and remove expired products from db'''
     db = get_database_connection()
-    existing_keys = db.keys()
-
-    product_keys = [key for key in existing_keys if DB_PRODUCT_PREFIX.encode() in key]
+    products_pattern = f'{DB_PRODUCT_PREFIX}*'
+    product_keys = db.scan(0, match=products_pattern, count=1000)[1]
     expired_keys = []
     for key in product_keys:
         if _is_expired(key):
@@ -148,11 +149,8 @@ def remove_search(user_id: str, search_number: str):
 def remove_products_by_search_number(user_id: str, search_number: str):
     db = get_database_connection()
     search_url = db.hget('{}{}'.format(DB_SEARCH_PREFIX, user_id), search_number)
-    keys = db.keys()
-    user_product_keys = [
-        key for key in keys
-        if key.startswith(f'{DB_PRODUCT_PREFIX}:{user_id}'.encode())
-    ]
+    products_pattern = f'{DB_PRODUCT_PREFIX}{user_id}:*'
+    user_product_keys = db.scan(0, match=products_pattern, count=1000)[1]
     keys_for_deletion = []
     for key in user_product_keys:
         if db.hget(key, 'search_url') == search_url:
