@@ -65,6 +65,7 @@ async def send_product_updates(product_infos, is_new_products=False):
         ''')
         await bot.send_photo(chat_id, product['img_url'], caption=message)
         db_aps.store_watched_product_info(product)
+    dispatcher.loop.create_task(avito_parser.start_parser(bot, parser_sleep_time))
 
 
 @dispatcher.errors_handler()
