@@ -9,6 +9,7 @@ import requests
 
 
 DB_PRODUCT_PREFIX = 'avito:product_info:'
+DB_SEARCH_PREFIX = 'avito:user_search:'
 db_logger = logging.getLogger('db_logger')
 _database = None
 
@@ -93,3 +94,43 @@ def _is_expired(product_key: str) -> typing.Optional[bool]:
     for selector in expired_selectors:
         if text.find(selector) != -1:
             return True
+
+
+def add_new_search(user_id: str, url: str):
+    db = get_database_connection()
+    db_key = '{}{}'.format(DB_SEARCH_PREFIX, user_id)
+    existing_searches = db.hvals(db_key)
+    if not existing_searches:
+        search_number = 1
+    else:
+        search_number = len(existing_searches) + 1
+    db.hmset(db_key, {search_number: url})
+    return
+
+
+def get_existing_searches(user_id: str):
+    db = get_database_connection()
+    db_key = '{}{}'.format(DB_SEARCH_PREFIX, user_id)
+    existing_searches = db.hgetall(db_key)
+    if not existing_searches:
+        return
+    existing_searches = {
+        search_number.decode('utf-8'): search_url.decode('utf-8')
+        for search_number, search_url in existing_searches.items()
+    }
+    return existing_searches
+
+
+def remove_search(user_id: str, search_number: str):
+    db = get_database_connection()
+    db_key = '{}{}'.format(DB_SEARCH_PREFIX, user_id)
+    db.hdel(db_key, search_number)
+    remaining_searches = db.hvals(db_key)
+    if remaining_searches:
+        updated_searches = {
+            search_number+1: search_url
+            for search_number, search_url in enumerate(remaining_searches)
+        }
+        db.delete(db_key)
+        db.hmset(db_key, updated_searches)
+    return 'Поиск удален'
