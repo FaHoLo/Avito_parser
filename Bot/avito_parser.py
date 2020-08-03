@@ -14,6 +14,17 @@ import utils
 
 
 avito_logger = logging.getLogger('avito-logger')
+SEARCH_HEADERS = {
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Accept-Language': 'ru,en-US;q=0.7,en;q=0.3',
+    'Cache-Control': 'max-age=0',
+    'Host': 'www.avito.ru',
+    'Referer': 'https://www.avito.ru/autosearch',
+    'TE': 'Trailers',
+    'Upgrade-Insecure-Requests': '1',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:79.0) Gecko/20100101 Firefox/79.0',
+}
 
 
 def main():
@@ -84,7 +95,7 @@ def parse_avito_products_update(url, user_id) -> list:
 
 
 def get_product_image_url(product_url):
-    response = requests.get(product_url, headers=db_aps.BROWSER_HEADERS)
+    response = requests.get(product_url, headers=db_aps.PRODUCT_HEADERS)
     response.raise_for_status()
     img_url = 'https:{}'.format(
         BeautifulSoup(response.text, 'lxml').select_one('.gallery-img-frame')['data-url'])
@@ -93,7 +104,7 @@ def get_product_image_url(product_url):
 
 def get_avito_soup_page(url: str) -> BeautifulSoup:
     '''Get website (avito) response and parse with BS4'''
-    response = requests.get(url, headers=db_aps.BROWSER_HEADERS)
+    response = requests.get(url, headers=SEARCH_HEADERS)
     response.raise_for_status()
 
     avito_logger.debug('Got 200 response from avito')

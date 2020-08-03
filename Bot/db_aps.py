@@ -14,7 +14,7 @@ DB_PRODUCT_PREFIX = 'avito:product_info:'
 DB_SEARCH_PREFIX = 'avito:user_search:'
 db_logger = logging.getLogger('db_logger')
 _database = None
-BROWSER_HEADERS = {
+PRODUCT_HEADERS = {
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
     'Accept-Encoding': 'gzip, deflate, br',
     'Accept-Language': 'ru,en-US;q=0.7,en;q=0.3',
@@ -111,7 +111,7 @@ def _is_expired(product_key: str) -> typing.Optional[bool]:
     db = get_database_connection()
     expired_selectors = ['item-closed-warning', 'item-view-warning-content']
     product_url = db.hget(product_key, 'product_url').decode('utf-8')
-    response = requests.get(product_url, headers=BROWSER_HEADERS)
+    response = requests.get(product_url, headers=PRODUCT_HEADERS)
     response.raise_for_status()
     text = response.text
     for selector in expired_selectors:
