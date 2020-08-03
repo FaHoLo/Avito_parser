@@ -74,12 +74,28 @@ async def send_help(message: types.Message, state: FSMContext):
     await message.answer(text, disable_web_page_preview=True)
 
 
+@dispatcher.message_handler(state='*', commands=['cancel'])
+async def cancel_handler(message: types.Message, state: FSMContext):
+    current_state = await state.get_state()
+
+    cancel_text = 'Отправь /help чтобы получить подсказку.'
+    if current_state == 'AddSearch:waiting_url':
+        cancel_text = f'Добавление нового поиска отменено.\n{cancel_text}'
+    elif current_state == 'DelSearch:waiting_search_number':
+        cancel_text = f'Выбор поиска для удаления отменен.\n{cancel_text}'
+    await message.answer(cancel_text, reply_markup=types.ReplyKeyboardRemove())
+
+    if current_state is not None:
+        await state.set_state(None)
+
+
 @dispatcher.message_handler(state='*', commands=['add_search'])
 async def start_search_adding(message: types.Message):
     # TODO check for search number, set limit
     text = dedent('''\
     Ожидаю ссылку на поиск, пример:
     https://www.avito.ru/moskva_i_mo?q=bmv
+    Отправь /cancel, чтобы отменить добавление нового поиска
     ''')
     await AddSearch.waiting_url.set()
     await message.answer(text, disable_web_page_preview=True)
@@ -93,7 +109,7 @@ async def add_search_url_to_db(message: types.Message, state: FSMContext):
 
     existing_searches = db_aps.get_existing_searches(message.chat.id)
     if existing_searches and message.text in existing_searches.values():
-        await message.answer('Такой поиск уже запущен')
+        await message.answer('Такой поиск уже запущен. Попробуй еще раз.')
         return
 
     db_aps.add_new_search(user_id=message.chat.id, url=message.text)
@@ -115,7 +131,7 @@ async def start_search_deletion(message: types.Message):
             {search_url}\n
         ''')
         keyboard.insert(types.KeyboardButton(search_number))
-
+    text += '\n\nОтправь /cancel, чтобы отменить удаление поиска'
     await DelSearch.waiting_search_number.set()
     await message.answer(text, reply_markup=keyboard, disable_web_page_preview=True)
 
