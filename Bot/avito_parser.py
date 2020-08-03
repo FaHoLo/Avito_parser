@@ -15,14 +15,6 @@ import utils
 
 avito_logger = logging.getLogger('avito-logger')
 SEARCH_HEADERS = {
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-    'Accept-Encoding': 'gzip, deflate, br',
-    'Accept-Language': 'ru,en-US;q=0.7,en;q=0.3',
-    'Cache-Control': 'max-age=0',
-    'Host': 'www.avito.ru',
-    'Referer': 'https://www.avito.ru/autosearch',
-    'TE': 'Trailers',
-    'Upgrade-Insecure-Requests': '1',
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:79.0) Gecko/20100101 Firefox/79.0',
 }
 
