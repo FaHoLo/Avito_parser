@@ -8,8 +8,7 @@ from utils import handle_exception
 
 def main():
     load_dotenv()
-    while True:
-        start_bot()
+    start_bot()
 
 
 def start_bot():
