@@ -131,7 +131,7 @@ async def start_search_deletion(message: types.Message):
             {search_url}\n
         ''')
         keyboard.insert(types.KeyboardButton(search_number))
-    text += '\n\nОтправь /cancel, чтобы отменить удаление поиска'
+    text += 'Отправь /cancel, чтобы отменить удаление поиска'
     await DelSearch.waiting_search_number.set()
     await message.answer(text, reply_markup=keyboard, disable_web_page_preview=True)
 
