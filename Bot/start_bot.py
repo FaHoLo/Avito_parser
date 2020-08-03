@@ -3,7 +3,6 @@ from dotenv import load_dotenv
 from avito_parser import start_parser
 from db_aps import run_expired_products_collector
 from tg_bot import bot, dispatcher, executor
-from utils import handle_exception
 
 
 def main():
