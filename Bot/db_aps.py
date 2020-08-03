@@ -48,6 +48,7 @@ def store_watched_product_info(product_info: dict, user_id: str, search_url: str
         '{}{}:{}'.format(DB_PRODUCT_PREFIX, user_id, product_info['product_id']),
         {
             'product_id': product_info['product_id'],
+            'product_url': product_info['product_url'],
             'title': product_info['title'],
             'price':  product_info['price'],
             'search_url': search_url,
