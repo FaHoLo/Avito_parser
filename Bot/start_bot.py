@@ -9,10 +9,7 @@ from utils import handle_exception
 def main():
     load_dotenv()
     while True:
-        try:
-            start_bot()
-        except Exception:
-            handle_exception('main_start_bot_logger')
+        start_bot()
 
 
 def start_bot():
