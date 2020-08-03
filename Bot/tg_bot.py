@@ -58,7 +58,7 @@ async def send_welcome(message: types.Message, state: FSMContext):
     current_state = await state.get_state()
     if current_state:
         await state.finish()
-    text = 'Привет! Я бот, буду скидывать тебе объявления с Avito. Жми /help'
+    text = 'Привет! Я бот, буду скидывать тебе объявления с Avito.\nЖми /help'
     await message.answer(text)
 
 
