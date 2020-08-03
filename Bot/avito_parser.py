@@ -38,19 +38,19 @@ async def start_parser(bot, sleep_time=1800):
     while True:
         searches = db_aps.collect_searches()
         for user_id, user_searches in searches.items():
-            try:
-                await check_user_searches(user_id, user_searches, bot)
-            except Exception:
-                await utils.handle_exception('avito_parser_logger')
+            await check_user_searches(user_id, user_searches, bot)
         await sleep(sleep_time)
 
 
 async def check_user_searches(user_id, user_searches, bot):
     for url in user_searches:
-        new_products, updated_products = parse_avito_products_update(url, user_id)
-        await send_product_updates(bot, user_id, updated_products, url)
-        await send_product_updates(bot, user_id, new_products, url, is_new_products=True)
-        await sleep(randint(10, 20))
+        try:
+            new_products, updated_products = parse_avito_products_update(url, user_id)
+            await send_product_updates(bot, user_id, updated_products, url)
+            await send_product_updates(bot, user_id, new_products, url, is_new_products=True)
+            await sleep(randint(10, 20))
+        except Exception:
+            await utils.handle_exception('avito_parser_logger')
 
 
 async def send_product_updates(bot, chat_id, product_infos, search_url, is_new_products=False):
