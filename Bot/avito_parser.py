@@ -94,10 +94,7 @@ def get_product_image_url(product_url):
 def get_avito_soup_page(url: str) -> BeautifulSoup:
     '''Get website (avito) response and parse with BS4'''
     response = requests.get(url)
-    try:
-        response.raise_for_status()
-    except Exception:
-        avito_logger.error(Exception)
+    response.raise_for_status()
 
     avito_logger.debug('Got 200 response from avito')
     return BeautifulSoup(response.text, 'lxml')
