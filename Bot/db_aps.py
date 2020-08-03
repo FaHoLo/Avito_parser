@@ -7,6 +7,8 @@ import typing
 import redis
 import requests
 
+import utils
+
 
 DB_PRODUCT_PREFIX = 'avito:product_info:'
 DB_SEARCH_PREFIX = 'avito:user_search:'
@@ -74,7 +76,10 @@ def collect_searches() -> dict:
 async def run_expired_products_collector(sleep_time=43200):
     '''Runs collector witch remove expired products from db'''
     while True:
-        await find_expired_products()
+        try:
+            await find_expired_products()
+        except Exception:
+            await utils.handle_exception('expired_products_logger')
         await sleep(sleep_time)
 
 
