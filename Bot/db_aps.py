@@ -2,7 +2,7 @@ from asyncio import sleep
 import logging
 import os
 from random import randint
-import typing
+from typing import Optional, Tuple
 
 import redis
 import requests
@@ -25,7 +25,7 @@ PRODUCT_HEADERS = {
 
 
 def get_database_connection() -> redis.Redis:
-    '''Get or create Redis db connection'''
+    """Get or create Redis db connection."""
     global _database
     if _database is None:
         database_password = os.getenv('DB_PASSWORD')
@@ -36,8 +36,8 @@ def get_database_connection() -> redis.Redis:
     return _database
 
 
-def find_new_and_updated_products(product_infos: list, user_id) -> list:
-    '''Find new and updated products'''
+def find_new_and_updated_products(product_infos: list, user_id) -> Tuple[list, list]:
+    """Find new and updated products."""
     db = get_database_connection()
     new_products = []
     updated_products = []
@@ -52,7 +52,7 @@ def find_new_and_updated_products(product_infos: list, user_id) -> list:
 
 
 def store_watched_product_info(product_info: dict, user_id: str, search_url: str) -> None:
-    '''Store product into redis db'''
+    """Store product into redis db."""
     db = get_database_connection()
     db.hmset(
         '{}{}:{}'.format(DB_PRODUCT_PREFIX, user_id, product_info['product_id']),
@@ -67,7 +67,7 @@ def store_watched_product_info(product_info: dict, user_id: str, search_url: str
 
 
 def collect_searches() -> dict:
-    '''Collect all existing searches from db'''
+    """Collect all existing searches from db."""
     db = get_database_connection()
     search_pattern = f'{DB_SEARCH_PREFIX}*'
     # All scan methods returns cursor position and then list of keys: (0, [key1, key2])
@@ -82,7 +82,7 @@ def collect_searches() -> dict:
 
 
 async def run_expired_products_collector(sleep_time=43200):
-    '''Runs collector witch remove expired products from db'''
+    """Runs collector witch remove expired products from db."""
     while True:
         try:
             await find_expired_products()
@@ -92,7 +92,7 @@ async def run_expired_products_collector(sleep_time=43200):
 
 
 async def find_expired_products() -> None:
-    '''Find and remove expired products from db'''
+    """Find and remove expired products from db."""
     db = get_database_connection()
     products_pattern = f'{DB_PRODUCT_PREFIX}*'
     product_keys = db.scan(0, match=products_pattern, count=1000)[1]
@@ -106,8 +106,8 @@ async def find_expired_products() -> None:
         db.delete(*expired_keys)
 
 
-def _is_expired(product_key: str) -> typing.Optional[bool]:
-    '''Get product page and check for expiration selectors in it'''
+def _is_expired(product_key: str) -> Optional[bool]:
+    """Get product page and check for expiration selectors in it."""
     db = get_database_connection()
     expired_selectors = ['item-closed-warning', 'item-view-warning-content']
     product_url = db.hget(product_key, 'product_url').decode('utf-8')
