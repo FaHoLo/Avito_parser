@@ -4,6 +4,7 @@ import os
 from pprint import pprint
 from random import randint
 from textwrap import dedent
+from typing import Tuple, List
 
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
@@ -34,10 +35,11 @@ def main():
 
 
 async def start_parser(bot, sleep_time=1800):
-    '''
-    Start parser that gets search queries from db,
-    checks them for updates and send updates to users
-    '''
+    """Start parser avito parser.
+
+    Parser gets search queries from db,
+    checks them for updates and send updates to users.
+    """
     while True:
         searches = db_aps.collect_searches()
         for user_id, user_searches in searches.items():
@@ -73,8 +75,8 @@ async def send_product_updates(bot, chat_id, product_infos, search_url, is_new_p
         db_aps.store_watched_product_info(product, chat_id, search_url)
 
 
-def parse_avito_products_update(url, user_id) -> list:
-    '''Parse avito url and find new and updated products'''
+def parse_avito_products_update(url, user_id) -> Tuple[list, list]:
+    """Parse avito url and find new and updated products."""
     avito_page = get_avito_soup_page(url)
     products = collect_products(avito_page)
     product_infos = parse_product_infos(products)
@@ -95,7 +97,7 @@ def get_product_image_url(product_url):
 
 
 def get_avito_soup_page(url: str) -> BeautifulSoup:
-    '''Get website (avito) response and parse with BS4'''
+    """Get website (avito) response and parse with BS4."""
     response = requests.get(url)
     response.raise_for_status()
 
@@ -104,7 +106,7 @@ def get_avito_soup_page(url: str) -> BeautifulSoup:
 
 
 def collect_products(page: BeautifulSoup) -> list:
-    '''Collect products from page and remove offers from other cities'''
+    """Collect products from page and remove offers from other cities."""
     products = page.select('.item_table')
     extra_blocks = page.select('.extra-block__title')
     if len(extra_blocks) > 1:  # Expected one extra block
@@ -122,12 +124,11 @@ def collect_products(page: BeautifulSoup) -> list:
     return products
 
 
-def parse_product_infos(products: list) -> list:
-    '''
-    Parse info about products -> list of dicts
+def parse_product_infos(products: list) -> List[dict]:
+    """Parse info about products.
 
-    dict keys: product_id, title, price, product_url, pub_date
-    '''
+    Dict keys: product_id, title, price, product_url, pub_date
+    """
     product_infos = []
     for product in products:
         product_info = {
