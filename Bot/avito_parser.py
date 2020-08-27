@@ -50,7 +50,7 @@ async def start_parser(bot, sleep_time=1800):
 async def check_user_searches(user_id, user_searches, bot):
     for url in user_searches:
         try:
-            new_products, updated_products = parse_avito_products_update(url, user_id)
+            new_products, updated_products = await parse_avito_products_update(url, user_id)
             await send_product_updates(bot, user_id, updated_products, url)
             await send_product_updates(bot, user_id, new_products, url, is_new_products=True)
             await sleep(randint(10, 20))
@@ -75,20 +75,20 @@ async def send_product_updates(bot, chat_id, product_infos, search_url, is_new_p
         db_aps.store_watched_product_info(product, chat_id, search_url)
 
 
-def parse_avito_products_update(url, user_id) -> Tuple[list, list]:
+async def parse_avito_products_update(url, user_id) -> Tuple[list, list]:
     """Parse avito url and find new and updated products."""
-    avito_page = get_avito_soup_page(url)
+    avito_page = await get_avito_soup_page(url)
     products = collect_products(avito_page)
     product_infos = parse_product_infos(products)
     new_products, updated_products = db_aps.find_new_and_updated_products(product_infos, user_id)
     for product in new_products:
-        product['img_url'] = get_product_image_url(product['product_url'])
+        product['img_url'] = await get_product_image_url(product['product_url'])
     for product in updated_products:
-        product['img_url'] = get_product_image_url(product['product_url'])
+        product['img_url'] = await get_product_image_url(product['product_url'])
     return new_products, updated_products
 
 
-def get_product_image_url(product_url):
+async def get_product_image_url(product_url):
     response = await utils.make_get_request(product_url, headers=db_aps.PRODUCT_HEADERS)
     if not response:
         return
@@ -97,7 +97,7 @@ def get_product_image_url(product_url):
     return img_url
 
 
-def get_avito_soup_page(url: str) -> BeautifulSoup:
+async def get_avito_soup_page(url: str) -> BeautifulSoup:
     """Get website (avito) response and parse with BS4."""
     response = await utils.make_get_request(url)
     if not response:
