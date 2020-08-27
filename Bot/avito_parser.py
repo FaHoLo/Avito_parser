@@ -89,8 +89,9 @@ def parse_avito_products_update(url, user_id) -> Tuple[list, list]:
 
 
 def get_product_image_url(product_url):
-    response = requests.get(product_url, headers=db_aps.PRODUCT_HEADERS)
-    response.raise_for_status()
+    response = utils.make_get_request(product_url, headers=db_aps.PRODUCT_HEADERS)
+    if not response:
+        return
     img_url = 'https:{}'.format(
         BeautifulSoup(response.text, 'lxml').select_one('.gallery-img-frame')['data-url'])
     return img_url
@@ -98,8 +99,9 @@ def get_product_image_url(product_url):
 
 def get_avito_soup_page(url: str) -> BeautifulSoup:
     """Get website (avito) response and parse with BS4."""
-    response = requests.get(url)
-    response.raise_for_status()
+    response = utils.make_get_request(url)
+    if not response:
+        return
 
     avito_logger.debug('Got 200 response from avito')
     return BeautifulSoup(response.text, 'lxml')

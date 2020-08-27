@@ -111,13 +111,9 @@ def _is_expired(product_key: str) -> Optional[bool]:
     db = get_database_connection()
     expired_selectors = ['item-closed-warning', 'item-view-warning-content']
     product_url = db.hget(product_key, 'product_url').decode('utf-8')
-    response = requests.get(product_url, headers=PRODUCT_HEADERS, allow_redirects=False)
-    response.raise_for_status()
-    if 300 <= response.status_code < 400:
-        return True
-    text = response.text
+    response = utils.make_get_request(product_url, headers=PRODUCT_HEADERS)
     for selector in expired_selectors:
-        if text.find(selector) != -1:
+        if response.text.find(selector) != -1:
             return True
 
 
