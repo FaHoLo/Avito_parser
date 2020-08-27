@@ -98,7 +98,7 @@ async def find_expired_products() -> None:
     product_keys = db.scan(0, match=products_pattern, count=1000)[1]
     expired_keys = []
     for key in product_keys:
-        if _is_expired(key):
+        if await _is_expired(key):
             expired_keys.append(key)
         await sleep(randint(10, 20))
 
@@ -106,12 +106,14 @@ async def find_expired_products() -> None:
         db.delete(*expired_keys)
 
 
-def _is_expired(product_key: str) -> Optional[bool]:
+async def _is_expired(product_key: str) -> Optional[bool]:
     """Get product page and check for expiration selectors in it."""
     db = get_database_connection()
     expired_selectors = ['item-closed-warning', 'item-view-warning-content']
     product_url = db.hget(product_key, 'product_url').decode('utf-8')
-    response = utils.make_get_request(product_url, headers=PRODUCT_HEADERS)
+    response = await utils.make_get_request(product_url, headers=PRODUCT_HEADERS)
+    if not response:
+        return None
     for selector in expired_selectors:
         if response.text.find(selector) != -1:
             return True
