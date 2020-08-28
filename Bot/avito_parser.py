@@ -16,8 +16,18 @@ import utils
 
 avito_logger = logging.getLogger('avito-logger')
 SEARCH_HEADERS = {
+    'Accept': '*/*',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Accept-Language': 'ru,en-US;q=0.7,en;q=0.3',
+    'Connection': 'keep-alive',
+    # 'Content-Length': '87',
+    'Content-Type': 'text/plain;charset=UTF-8',
+    # 'DNT': '1',
+    # 'Host': 'socket.avito.ru',
+    'Origin': 'https://www.avito.ru',
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:79.0) Gecko/20100101 Firefox/79.0',
 }
+
 
 
 def main():
@@ -82,9 +92,17 @@ async def parse_avito_products_update(url, user_id) -> Tuple[list, list]:
     product_infos = parse_product_infos(products)
     new_products, updated_products = db_aps.find_new_and_updated_products(product_infos, user_id)
     for product in new_products:
-        product['img_url'] = await get_product_image_url(product['product_url'])
+        try:
+            product['img_url'] = await get_product_image_url(product['product_url'])
+        except:
+            await utils.handle_exception('avito_parser_logger', 'image_parse')
+            continue
     for product in updated_products:
-        product['img_url'] = await get_product_image_url(product['product_url'])
+        try:
+            product['img_url'] = await get_product_image_url(product['product_url'])
+        except:
+            await utils.handle_exception('avito_parser_logger', 'image_parse')
+            continue
     return new_products, updated_products
 
 
@@ -99,7 +117,7 @@ async def get_product_image_url(product_url):
 
 async def get_avito_soup_page(url: str) -> BeautifulSoup:
     """Get website (avito) response and parse with BS4."""
-    response = await utils.make_get_request(url)
+    response = await utils.make_get_request(url, headers=SEARCH_HEADERS)
     if not response:
         return
 

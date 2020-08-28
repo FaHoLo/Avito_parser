@@ -1,3 +1,4 @@
+from concurrent.futures._base import TimeoutError
 import datetime
 import os
 import traceback
@@ -116,9 +117,9 @@ async def make_get_request(url: str, headers: dict = None) -> typing.Optional[ht
             try:
                 response = await client.get(url, allow_redirects=False)
             except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout,
-                    httpx.ReadError, httpx.RemoteProtocolError, httpx.ProxyError):
+                    httpx.ReadError, httpx.RemoteProtocolError, httpx.ProxyError,
+                    httpx.TimeoutException, TimeoutError) as e:
                 continue
-
             response.raise_for_status()
             return response
     return None
