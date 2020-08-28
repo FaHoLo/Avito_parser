@@ -8,7 +8,7 @@ from typing import Tuple, List
 
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
-import requests
+from httpx import HTTPError
 
 import db_aps
 import utils
@@ -27,7 +27,7 @@ SEARCH_HEADERS = {
     'Origin': 'https://www.avito.ru',
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:79.0) Gecko/20100101 Firefox/79.0',
 }
-
+DEFAULT_IMG='https://upload.wikimedia.org/wikipedia/commons/8/84/Avito_logo1.png'
 
 
 def main():
@@ -64,6 +64,9 @@ async def check_user_searches(user_id, user_searches, bot):
             await send_product_updates(bot, user_id, updated_products, url)
             await send_product_updates(bot, user_id, new_products, url, is_new_products=True)
             await sleep(randint(10, 20))
+        except HTTPError:
+            sleep(randint(10, 20))
+            continue
         except Exception:
             await utils.handle_exception('avito_parser_logger')
 
@@ -88,6 +91,8 @@ async def send_product_updates(bot, chat_id, product_infos, search_url, is_new_p
 async def parse_avito_products_update(url, user_id) -> Tuple[list, list]:
     """Parse avito url and find new and updated products."""
     avito_page = await get_avito_soup_page(url)
+    if not avito_page:
+        raise HTTPError('Failed to download serach page', request=url)
     products = collect_products(avito_page)
     product_infos = parse_product_infos(products)
     new_products, updated_products = db_aps.find_new_and_updated_products(product_infos, user_id)
@@ -95,12 +100,14 @@ async def parse_avito_products_update(url, user_id) -> Tuple[list, list]:
         try:
             product['img_url'] = await get_product_image_url(product['product_url'])
         except:
+            product['img_url'] = DEFAULT_IMG
             await utils.handle_exception('avito_parser_logger', 'image_parse')
             continue
     for product in updated_products:
         try:
             product['img_url'] = await get_product_image_url(product['product_url'])
         except:
+            product['img_url'] = DEFAULT_IMG
             await utils.handle_exception('avito_parser_logger', 'image_parse')
             continue
     return new_products, updated_products
@@ -109,7 +116,7 @@ async def parse_avito_products_update(url, user_id) -> Tuple[list, list]:
 async def get_product_image_url(product_url):
     response = await utils.make_get_request(product_url, headers=db_aps.PRODUCT_HEADERS)
     if not response:
-        return
+        return DEFAULT_IMG
     img_url = 'https:{}'.format(
         BeautifulSoup(response.text, 'lxml').select_one('.gallery-img-frame')['data-url'])
     return img_url
