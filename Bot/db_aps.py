@@ -26,23 +26,6 @@ PRODUCT_HEADERS = {
 }
 
 
-
-# Connection
-# 	keep-alive
-# Cookie
-# 	u=2fkk4nb4.pxrrgy.g4bkx8s0nb; buyer_selected_search_radius4=0_general; buyer_location_id=107620; __cfduid=da3faf8aeb4865f7d5ea354daa41c29921572017036; sx=H4sIAAAAAAACA53MQQrEIAwAwL%2Fk3EMWo0Z%2F02alFLE5BDawxb%2B3byjMeS5I4SAJoUlT3plJ3dS7OkK94AcVCvWxFsKYnMjRVdS8P1RcdoMFGtRPLJxKJEpzge%2F55%2B3MYxyKJMZuKNKFX5U55Dlv45e%2FoKcAAAA%3D; sessid=dde3703f4d339a700aed7fc477747bc2.1597047906; buyer_selected_search_radius0=200; buyer_laas_location=107620; auth=1; luri=moskva_i_mo; f=5.0c4f4b6d233fb90636b4dd61b04726f147e1e…2da10fb74cac1eab2da10fb74cac1eab2da10fb74cac1eab2da10fb74cac1eab2da10fb74cac1eab2da10fb74cac1eab2da10fb74cac1eabbab1e50d279434d3ef11ddf5ce0e4d542e511a5f0099b832aa7cc91466f51f46baa01cfc7cfb681814757bc5db2d726c173fba42a7730f8ae6b4ddffebbeebadc69b79734e26869c99831abcf33a34522adfe92023a526b28f1786dad6fd981249bd3ccbb489896d04dbcad294c152cbef757b3efd207d74e5b844a2378601ccd50b96489ab264ed3de19da9ed218fe215b1adc30b19c0484f24917cd5f6b2ac; v=1598609046; so=1598609046; dfp_group=54; account_hierarchy_info=0; no-ssr=1
-# DNT
-# 	1
-# Host
-# 	www.avito.ru
-# Referer
-# 	https://www.avito.ru/moskva_i_mo?pmax=13000&pmin=6600&q=u28e590d&s=104
-# TE
-# 	Trailers
-# Upgrade-Insecure-Requests
-# 	1
-
-
 def get_database_connection() -> redis.Redis:
     """Get or create Redis db connection."""
     global _database
