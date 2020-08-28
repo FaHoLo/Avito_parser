@@ -1,3 +1,5 @@
+import os
+
 from dotenv import load_dotenv
 
 from avito_parser import start_parser
@@ -11,8 +13,14 @@ def main():
 
 
 def start_bot():
-    parser_sleep_time = 1800
-    collector_sleep_time = 43200  # 12 hours
+    """Start parser, expired_collector and tg bot."""
+
+    if os.getenv('DEBUG', 'False').lower() in ['true', 'yes', 'y', '1']:
+        parser_sleep_time = 10
+        collector_sleep_time = 20
+    else:
+        parser_sleep_time = 1800
+        collector_sleep_time = 43200  # 12 hours
     dispatcher.loop.create_task(start_parser(bot, parser_sleep_time))
     dispatcher.loop.create_task(run_expired_products_collector(collector_sleep_time))
     executor.start_polling(dispatcher)
