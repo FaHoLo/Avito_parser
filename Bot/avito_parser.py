@@ -65,7 +65,7 @@ async def check_user_searches(user_id, user_searches, bot):
             await send_product_updates(bot, user_id, new_products, url, is_new_products=True)
             await sleep(randint(10, 20))
         except HTTPError:
-            sleep(randint(10, 20))
+            await sleep(randint(10, 20))
             continue
         except Exception:
             await utils.handle_exception('avito_parser_logger')
