@@ -167,6 +167,7 @@ def get_user_existing_searches(user_id: str):
 
 
 def remove_search(user_id: str, search_number: str):
+    remove_products_by_search_number(user_id, search_number)
     db = get_database_connection()
     db_key = f'{DB_SEARCH_PREFIX}{user_id}'
     db.hdel(db_key, search_number)
@@ -178,7 +179,6 @@ def remove_search(user_id: str, search_number: str):
         }
         db.delete(db_key)
         db.hmset(db_key, updated_searches)
-    remove_products_by_search_number(user_id, search_number)
     db_logger.debug(f'Removed {search_number}\'th search of {user_id} user')
     return 'Поиск удален'
 
