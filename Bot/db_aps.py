@@ -44,7 +44,7 @@ def find_new_and_updated_products(product_infos: list, user_id) -> Tuple[list, l
     new_products = []
     updated_products = []
     for product in product_infos:
-        db_product = db.hgetall('{}{}:{}'.format(DB_PRODUCT_PREFIX, user_id, product['product_id']))
+        db_product = db.hgetall(f'{DB_PRODUCT_PREFIX}{user_id}:{product["product_id"]}')
         if not db_product:
             new_products.append(product)
             continue
@@ -57,7 +57,7 @@ def store_watched_product_info(product_info: dict, user_id: str, search_url: str
     """Store product into redis db."""
     db = get_database_connection()
     db.hmset(
-        '{}{}:{}'.format(DB_PRODUCT_PREFIX, user_id, product_info['product_id']),
+        f'{DB_PRODUCT_PREFIX}{user_id}:{product_info["product_id"]}',
         {
             'product_id': product_info['product_id'],
             'product_url': product_info['product_url'],
@@ -127,7 +127,7 @@ async def _is_expired(product_key: str) -> Optional[bool]:
 
 def add_new_search(user_id: str, url: str):
     db = get_database_connection()
-    db_key = '{}{}'.format(DB_SEARCH_PREFIX, user_id)
+    db_key = f'{DB_SEARCH_PREFIX}{user_id}'
     existing_searches = db.hvals(db_key)
     if not existing_searches:
         search_number = 1
@@ -139,7 +139,7 @@ def add_new_search(user_id: str, url: str):
 
 def get_existing_searches(user_id: str):
     db = get_database_connection()
-    db_key = '{}{}'.format(DB_SEARCH_PREFIX, user_id)
+    db_key = f'{DB_SEARCH_PREFIX}{user_id}'
     existing_searches = db.hgetall(db_key)
     if not existing_searches:
         return
@@ -152,7 +152,7 @@ def get_existing_searches(user_id: str):
 
 def remove_search(user_id: str, search_number: str):
     db = get_database_connection()
-    db_key = '{}{}'.format(DB_SEARCH_PREFIX, user_id)
+    db_key = f'{DB_SEARCH_PREFIX}{user_id}'
     db.hdel(db_key, search_number)
     remaining_searches = db.hvals(db_key)
     if remaining_searches:
@@ -168,7 +168,7 @@ def remove_search(user_id: str, search_number: str):
 
 def remove_products_by_search_number(user_id: str, search_number: str):
     db = get_database_connection()
-    search_url = db.hget('{}{}'.format(DB_SEARCH_PREFIX, user_id), search_number)
+    search_url = db.hget(f'{DB_SEARCH_PREFIX}{user_id}', search_number)
     products_pattern = f'{DB_PRODUCT_PREFIX}{user_id}:*'
     user_product_keys = db.scan(0, match=products_pattern, count=1000)[1]
     keys_for_deletion = []
