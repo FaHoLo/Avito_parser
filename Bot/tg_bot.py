@@ -42,7 +42,7 @@ def main():
     parser_sleep_time = 1800
     collector_sleep_time = 43200  # 12 hours
     dispatcher.loop.create_task(avito_parser.start_parser(bot, parser_sleep_time))
-    dispatcher.loop.create_task(db_aps.run_expired_products_collector(collector_sleep_time))
+    dispatcher.loop.create_task(db_aps.start_expired_products_collector(collector_sleep_time))
     executor.start_polling(dispatcher)
 
 

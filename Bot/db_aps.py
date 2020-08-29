@@ -83,7 +83,7 @@ def collect_searches() -> dict:
     return searches
 
 
-async def run_expired_products_collector(sleep_time=43200):
+async def start_expired_products_collector(sleep_time=43200):
     """Runs collector witch remove expired products from db."""
     while True:
         try:
