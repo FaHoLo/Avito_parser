@@ -107,7 +107,7 @@ async def add_search_url_to_db(message: types.Message, state: FSMContext):
         await message.answer('Невереная ссылка, попробуй еще раз')
         return
 
-    existing_searches = db_aps.get_existing_searches(message.chat.id)
+    existing_searches = db_aps.get_user_existing_searches(message.chat.id)
     if existing_searches and message.text in existing_searches.values():
         await message.answer('Такой поиск уже запущен. Попробуй еще раз.')
         return
@@ -119,7 +119,7 @@ async def add_search_url_to_db(message: types.Message, state: FSMContext):
 
 @dispatcher.message_handler(state='*', commands=['del_search'])
 async def start_search_deletion(message: types.Message):
-    exisiting_searches = db_aps.get_existing_searches(message.chat.id)
+    exisiting_searches = db_aps.get_user_existing_searches(message.chat.id)
     if not exisiting_searches:
         await message.answer('У вас нет запущенных поисков')
         return
@@ -145,7 +145,7 @@ async def delete_search(message: types.Message, state: FSMContext):
         await message.answer('Неверный запрос. Отправь номер поиска')
         return
 
-    if search_number > len(db_aps.get_existing_searches(message.chat.id)):
+    if search_number > len(db_aps.get_user_existing_searches(message.chat.id)):
         await message.answer('Поиска с таким номером не существует. Попробуй еще раз')
         return
 

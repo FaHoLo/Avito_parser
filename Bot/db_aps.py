@@ -137,7 +137,7 @@ def add_new_search(user_id: str, url: str):
     return
 
 
-def get_existing_searches(user_id: str):
+def get_user_existing_searches(user_id: str):
     db = get_database_connection()
     db_key = f'{DB_SEARCH_PREFIX}{user_id}'
     existing_searches = db.hgetall(db_key)
