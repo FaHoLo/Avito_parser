@@ -113,7 +113,8 @@ async def make_get_request(url: str, headers: dict = None) -> typing.Optional[ht
         proxies = {'https://': f'http://{get_random_proxy()}'}
         async with httpx.AsyncClient(headers=headers,
                                      proxies=proxies,
-                                     timeout=10) as client:
+                                     timeout=10,
+                                     verify=False) as client:
             try:
                 response = await client.get(url, allow_redirects=False)
             except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout,
