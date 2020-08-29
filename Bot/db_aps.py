@@ -1,5 +1,5 @@
 from asyncio import sleep
-import logging
+from logging import getLogger
 import os
 from random import randint
 from typing import Optional, Tuple
@@ -9,10 +9,12 @@ import redis
 import utils
 
 
+db_logger = getLogger('db_logger')
+
+_database = None
+
 DB_PRODUCT_PREFIX = 'avito:product_info:'
 DB_SEARCH_PREFIX = 'avito:user_search:'
-db_logger = logging.getLogger('db_logger')
-_database = None
 PRODUCT_HEADERS = {
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
     'Accept-Encoding': 'gzip, deflate, br',
@@ -24,6 +26,7 @@ PRODUCT_HEADERS = {
     'Upgrade-Insecure-Requests': '1',
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:79.0) Gecko/20100101 Firefox/79.0',
 }
+# TODO find right headers (all product requests failed with 403, 429)
 
 
 def get_database_connection() -> redis.Redis:
@@ -50,14 +53,16 @@ def find_new_and_updated_products(product_infos: list, user_id) -> Tuple[list, l
             continue
         if product['price'] != db_product[b'price'].decode('utf-8'):
             updated_products.append(product)
+    db_logger.debug(f'Found {len(new_products)} new and {len(updated_products)} products')
     return new_products, updated_products
 
 
 def store_watched_product_info(product_info: dict, user_id: str, search_url: str) -> None:
     """Store product into redis db."""
     db = get_database_connection()
+    product_key = f'{DB_PRODUCT_PREFIX}{user_id}:{product_info["product_id"]}'
     db.hmset(
-        f'{DB_PRODUCT_PREFIX}{user_id}:{product_info["product_id"]}',
+        product_key,
         {
             'product_id': product_info['product_id'],
             'product_url': product_info['product_url'],
@@ -66,6 +71,7 @@ def store_watched_product_info(product_info: dict, user_id: str, search_url: str
             'search_url': search_url,
         }
     )
+    db_logger.debug(f'Stored {product_key}')
 
 
 def collect_searches() -> dict:
@@ -80,16 +86,19 @@ def collect_searches() -> dict:
         user_id = key.split(':')[-1]
         user_searches = [search_url.decode('utf-8') for search_url in db.hvals(key)]
         searches[user_id] = user_searches
+    db_logger.debug(f'Collected {len(searches)} searches')
     return searches
 
 
 async def start_expired_products_collector(sleep_time=43200):
     """Runs collector witch remove expired products from db."""
     while True:
+        db_logger.debug('Starting new cycle stage of expired products collector')
         try:
             await find_expired_products()
         except Exception:
             await utils.handle_exception('expired_products_logger')
+        db_logger.debug(f'Expired products collector starts sleeping for {sleep_time} sec')
         await sleep(sleep_time)
 
 
@@ -103,26 +112,32 @@ async def find_expired_products() -> None:
         try:
             if await _is_expired(key):
                 expired_keys.append(key)
-        except:
+        except Exception:
             await utils.handle_exception('expired_products_logger')
             continue
         await sleep(randint(10, 20))
 
     if expired_keys:
         db.delete(*expired_keys)
+    db_logger.debug(f'Deleted {len(expired_keys)} expired keys from db')
 
 
 async def _is_expired(product_key: str) -> Optional[bool]:
     """Get product page and check for expiration selectors in it."""
     db = get_database_connection()
-    expired_selectors = ['item-closed-warning', 'item-view-warning-content']
+    expiration_selectors = ['item-closed-warning', 'item-view-warning-content']
     product_url = db.hget(product_key, 'product_url').decode('utf-8')
     response = await utils.make_get_request(product_url, headers=PRODUCT_HEADERS)
     if not response:
         return None
-    for selector in expired_selectors:
+    db_logger.debug(f'Got response status code {response.status_code}')
+    if response.status_code == 301:
+        return True
+    for selector in expiration_selectors:
         if response.text.find(selector) != -1:
             return True
+            db_logger.debug('Found expiration selector')
+    return None
 
 
 def add_new_search(user_id: str, url: str):
@@ -134,7 +149,7 @@ def add_new_search(user_id: str, url: str):
     else:
         search_number = len(existing_searches) + 1
     db.hmset(db_key, {search_number: url})
-    return
+    db_logger.debug(f'Add new search {db_key}')
 
 
 def get_user_existing_searches(user_id: str):
@@ -147,6 +162,7 @@ def get_user_existing_searches(user_id: str):
         search_number.decode('utf-8'): search_url.decode('utf-8')
         for search_number, search_url in existing_searches.items()
     }
+    db_logger.debug(f'Got {len(existing_searches)} existing seraches of user {user_id}')
     return existing_searches
 
 
@@ -163,6 +179,7 @@ def remove_search(user_id: str, search_number: str):
         db.delete(db_key)
         db.hmset(db_key, updated_searches)
     remove_products_by_search_number(user_id, search_number)
+    db_logger.debug(f'Removed {search_number}\'th search of {user_id} user')
     return 'Поиск удален'
 
 
@@ -177,3 +194,4 @@ def remove_products_by_search_number(user_id: str, search_number: str):
             keys_for_deletion.append(key)
 
     db.delete(*keys_for_deletion)
+    db_logger.debug(f'Removed products for search {search_number} of user {user_id}')

@@ -1,4 +1,4 @@
-import logging
+from logging import getLogger
 import os
 from textwrap import dedent
 
@@ -15,7 +15,7 @@ import utils
 
 load_dotenv()
 
-bot_logger = logging.getLogger('avito_bot_logger')
+bot_logger = getLogger('avito_bot_logger')
 
 # bot settings
 proxy = os.environ.get('TG_PROXY')
@@ -60,6 +60,7 @@ async def send_welcome(message: types.Message, state: FSMContext):
         await state.finish()
     text = 'Привет! Я бот, буду скидывать тебе объявления с Avito.\nЖми /help'
     await message.answer(text)
+    bot_logger.debug(f'Sent welcome message to {message.chat.id}')
 
 
 @dispatcher.message_handler(state='*', commands=['help'])
@@ -72,6 +73,7 @@ async def send_help(message: types.Message, state: FSMContext):
     Удалить существующий: /del_search
     ''')
     await message.answer(text, disable_web_page_preview=True)
+    bot_logger.debug(f'Sent help to {message.chat.id}')
 
 
 @dispatcher.message_handler(state='*', commands=['cancel'])
@@ -87,6 +89,7 @@ async def cancel_handler(message: types.Message, state: FSMContext):
 
     if current_state is not None:
         await state.set_state(None)
+    bot_logger.debug(f'Canceled state: {current_state}')
 
 
 @dispatcher.message_handler(state='*', commands=['add_search'])
@@ -99,22 +102,26 @@ async def start_search_adding(message: types.Message):
     ''')
     await AddSearch.waiting_url.set()
     await message.answer(text, disable_web_page_preview=True)
+    bot_logger.debug(f'Start adding new serach for {message.chat.id}')
 
 
 @dispatcher.message_handler(state=AddSearch.waiting_url)
 async def add_search_url_to_db(message: types.Message, state: FSMContext):
     if not message.text.startswith('https://www.avito.ru/'):
         await message.answer('Невереная ссылка, попробуй еще раз')
+        bot_logger.debug(f'Got wrong url: {message.text} from {message.chat.id}')
         return
 
     existing_searches = db_aps.get_user_existing_searches(message.chat.id)
     if existing_searches and message.text in existing_searches.values():
         await message.answer('Такой поиск уже запущен. Попробуй еще раз.')
+        bot_logger.debug(f'Got existing url: {message.text} from {message.chat.id}')
         return
 
     db_aps.add_new_search(user_id=message.chat.id, url=message.text)
     await state.finish()
     await message.answer('Поиск добавлен')
+    bot_logger.debug(f'New search url for {message.chat.id} added: {message.text}')
 
 
 @dispatcher.message_handler(state='*', commands=['del_search'])
@@ -122,6 +129,7 @@ async def start_search_deletion(message: types.Message):
     exisiting_searches = db_aps.get_user_existing_searches(message.chat.id)
     if not exisiting_searches:
         await message.answer('У вас нет запущенных поисков')
+        bot_logger.debug(f'Got delete request from user ({message.chat.id}) with no searches')
         return
     text = 'Вот список запущенных поисков.\nВыбери номер поиска, который хочешь удалить:\n\n'
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
@@ -134,24 +142,31 @@ async def start_search_deletion(message: types.Message):
     text += 'Отправь /cancel, чтобы отменить удаление поиска'
     await DelSearch.waiting_search_number.set()
     await message.answer(text, reply_markup=keyboard, disable_web_page_preview=True)
+    bot_logger.debug(f'Start search deletion for {message.chat.id}')
 
 
 @dispatcher.message_handler(state=DelSearch.waiting_search_number)
-# @dispatcher.callback_query_handler(state=DelSearch.waiting_search_number)
 async def delete_search(message: types.Message, state: FSMContext):
     try:
         search_number = int(message.text)
     except ValueError:
         await message.answer('Неверный запрос. Отправь номер поиска')
+        bot_logger.debug(
+            f'Got not int search number ({message.text}) for deletion from {message.chat.id}'
+        )
         return
 
     if search_number > len(db_aps.get_user_existing_searches(message.chat.id)):
         await message.answer('Поиска с таким номером не существует. Попробуй еще раз')
+        bot_logger.debug(
+            f'Got out of range deletion search number ({search_number}) from {message.chat.id}'
+        )
         return
 
     db_aps.remove_search(user_id=message.chat.id, search_number=message.text)
     await state.finish()
     await message.answer('Поиск удален', reply_markup=types.ReplyKeyboardRemove())
+    bot_logger.debug(f'Search deleted for {message.chat.id}')
 
 
 if __name__ == '__main__':

@@ -14,7 +14,8 @@ import db_aps
 import utils
 
 
-avito_logger = logging.getLogger('avito-logger')
+avito_parser_logger = logging.getLogger('avito_parser_logger')
+
 SEARCH_HEADERS = {
     'Accept': '*/*',
     'Accept-Encoding': 'gzip, deflate, br',
@@ -27,7 +28,7 @@ SEARCH_HEADERS = {
     'Origin': 'https://www.avito.ru',
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:79.0) Gecko/20100101 Firefox/79.0',
 }
-DEFAULT_IMG='https://upload.wikimedia.org/wikipedia/commons/8/84/Avito_logo1.png'
+DEFAULT_IMG = 'https://upload.wikimedia.org/wikipedia/commons/8/84/Avito_logo1.png'
 
 
 def main():
@@ -51,9 +52,11 @@ async def start_parser(bot, sleep_time=1800):
     checks them for updates and send updates to users.
     """
     while True:
+        avito_parser_logger.debug('Starting new parser cycle stage')
         searches = db_aps.collect_searches()
         for user_id, user_searches in searches.items():
             await check_user_searches(user_id, user_searches, bot)
+        avito_parser_logger.debug(f'All searches checked, parser start sleeping for {sleep_time}')
         await sleep(sleep_time)
 
 
@@ -65,6 +68,7 @@ async def check_user_searches(user_id, user_searches, bot):
             await send_product_updates(bot, user_id, new_products, url, is_new_products=True)
             await sleep(randint(10, 20))
         except HTTPError:
+            avito_parser_logger.debug(f'Got HTTPError for {url}')
             await sleep(randint(10, 20))
             continue
         except Exception:
@@ -86,39 +90,43 @@ async def send_product_updates(bot, chat_id, product_infos, search_url, is_new_p
         ''')
         await bot.send_photo(chat_id, product['img_url'], caption=message)
         db_aps.store_watched_product_info(product, chat_id, search_url)
+        avito_parser_logger.debug(f'Sent product update to {chat_id}')
 
 
 async def parse_avito_products_update(url, user_id) -> Tuple[list, list]:
     """Parse avito url and find new and updated products."""
     avito_page = await get_avito_soup_page(url)
     if not avito_page:
-        raise HTTPError('Failed to download serach page', request=url)
+        raise HTTPError('Failed to download search page', request=url)
     products = collect_products(avito_page)
     product_infos = parse_product_infos(products)
     new_products, updated_products = db_aps.find_new_and_updated_products(product_infos, user_id)
     for product in new_products:
         try:
             product['img_url'] = await get_product_image_url(product['product_url'])
-        except:
+        except Exception:  # Image parsing is now in debugging state
             product['img_url'] = DEFAULT_IMG
             await utils.handle_exception('avito_parser_logger', 'image_parse')
             continue
     for product in updated_products:
         try:
             product['img_url'] = await get_product_image_url(product['product_url'])
-        except:
+        except Exception:
             product['img_url'] = DEFAULT_IMG
             await utils.handle_exception('avito_parser_logger', 'image_parse')
             continue
+    avito_parser_logger.debug('Products update had been parsed')
     return new_products, updated_products
 
 
 async def get_product_image_url(product_url):
     response = await utils.make_get_request(product_url, headers=db_aps.PRODUCT_HEADERS)
     if not response:
+        avito_parser_logger.debug('Failed to parse product image. Set default url')
         return DEFAULT_IMG
     img_url = 'https:{}'.format(
         BeautifulSoup(response.text, 'lxml').select_one('.gallery-img-frame')['data-url'])
+    avito_parser_logger.debug(f'Got product image url: {img_url}')
     return img_url
 
 
@@ -126,9 +134,10 @@ async def get_avito_soup_page(url: str) -> BeautifulSoup:
     """Get website (avito) response and parse with BS4."""
     response = await utils.make_get_request(url, headers=SEARCH_HEADERS)
     if not response:
+        avito_parser_logger.debug(f'Failed to get response from avito page: {url}')
         return
 
-    avito_logger.debug('Got 200 response from avito')
+    avito_parser_logger.debug('Got 200 response from avito, soup page returned')
     return BeautifulSoup(response.text, 'lxml')
 
 
@@ -136,8 +145,8 @@ def collect_products(page: BeautifulSoup) -> list:
     """Collect products from page and remove offers from other cities."""
     products = page.select('.item_table')
     extra_blocks = page.select('.extra-block__title')
-    if len(extra_blocks) > 1:  # Expected one extra block
-        avito_logger.warning(f'Got {len(extra_blocks)} extra blocks')
+    if len(extra_blocks) > 1:  # Expected only one extra block
+        avito_parser_logger.warning(f'Got {len(extra_blocks)} extra blocks')
 
     extra_products = 0
     for block in extra_blocks:
@@ -147,7 +156,9 @@ def collect_products(page: BeautifulSoup) -> list:
 
     if extra_products:
         products = products[:-extra_products]
-    avito_logger.debug(f'Removed {extra_products} extra products. Got {len(products)} products')
+    avito_parser_logger.debug(
+        f'Collected {len(products)} products (removed {extra_products} extra products)'
+    )
     return products
 
 
@@ -168,6 +179,7 @@ def parse_product_infos(products: list) -> List[dict]:
             'pub_date': product.select_one('.snippet-date-info')['data-tooltip'],
         }
         product_infos.append(product_info)
+    avito_parser_logger.debug('Parsed product infos')
     return product_infos
 
 

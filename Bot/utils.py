@@ -1,5 +1,6 @@
 from concurrent.futures._base import TimeoutError
 import datetime
+from logging import getLogger
 import os
 import traceback
 import typing
@@ -10,6 +11,8 @@ from proxy_randomizer.providers import RegisteredProviders
 from random_user_agent.user_agent import UserAgent
 from random_user_agent.params import SoftwareName, OperatingSystem
 
+
+utils_logger = getLogger('utils_logger')
 
 _log_bot = None
 _user_agents = None
@@ -116,11 +119,15 @@ async def make_get_request(url: str, headers: dict = None) -> typing.Optional[ht
                                      timeout=10,
                                      verify=False) as client:
             try:
+                utils_logger.debug(f'GET request for url: {url}')
                 response = await client.get(url, allow_redirects=False)
             except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout,
                     httpx.ReadError, httpx.RemoteProtocolError, httpx.ProxyError,
-                    httpx.TimeoutException, TimeoutError):
+                    httpx.TimeoutException, TimeoutError) as e:
+                utils_logger.debug(f'Got exception while GET request: {e}')
                 continue
             response.raise_for_status()
+            utils_logger.debug('Got right response')
             return response
+    utils_logger.debug('Made 100 requests, None of them ended well')
     return None
