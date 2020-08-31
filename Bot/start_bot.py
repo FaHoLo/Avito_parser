@@ -18,7 +18,6 @@ def main():
 
 def start_bot():
     """Start parser, expired_collector and tg bot."""
-
     if os.getenv('DEBUG', 'False').lower() in ['true', 'yes', 'y', '1']:
         parser_sleep_time = 10
         collector_sleep_time = 20

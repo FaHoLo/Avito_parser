@@ -6,6 +6,7 @@ from random import randint
 from textwrap import dedent
 from typing import Tuple, List
 
+from aiogram import Bot
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from httpx import HTTPError
@@ -32,6 +33,7 @@ DEFAULT_IMG = 'https://upload.wikimedia.org/wikipedia/commons/8/84/Avito_logo1.p
 
 
 def main():
+    """Parse new and updated products and print them."""
     load_dotenv()
     logging.basicConfig(
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -45,7 +47,7 @@ def main():
     pprint(updated_products)
 
 
-async def start_parser(bot, sleep_time=1800):
+async def start_parser(bot: Bot, sleep_time: int = 1800):
     """Start parser avito parser.
 
     Parser gets search queries from db,
@@ -60,7 +62,8 @@ async def start_parser(bot, sleep_time=1800):
         await sleep(sleep_time)
 
 
-async def check_user_searches(user_id, user_searches, bot):
+async def check_user_searches(user_id: str, user_searches: list, bot: Bot):
+    """Check user's searches and send new and updated products to him."""
     for url in user_searches:
         try:
             new_products, updated_products = await parse_avito_products_update(url, user_id)
@@ -75,7 +78,9 @@ async def check_user_searches(user_id, user_searches, bot):
             await utils.handle_exception('avito_parser_logger')
 
 
-async def send_product_updates(bot, chat_id, product_infos, search_url, is_new_products=False):
+async def send_product_updates(bot: Bot, chat_id: str, product_infos: List[dict],
+                               search_url: str, is_new_products: bool = False):
+    """Send user's products updates to him."""
     message_start = 'Объявление обновилось'
     if is_new_products:
         message_start = 'Появилось новое объявление'
@@ -93,7 +98,7 @@ async def send_product_updates(bot, chat_id, product_infos, search_url, is_new_p
         avito_parser_logger.debug(f'Sent product update to {chat_id}')
 
 
-async def parse_avito_products_update(url, user_id) -> Tuple[list, list]:
+async def parse_avito_products_update(url: str, user_id: str) -> Tuple[list, list]:
     """Parse avito url and find new and updated products."""
     avito_page = await get_avito_soup_page(url)
     if not avito_page:
@@ -119,7 +124,8 @@ async def parse_avito_products_update(url, user_id) -> Tuple[list, list]:
     return new_products, updated_products
 
 
-async def get_product_image_url(product_url):
+async def get_product_image_url(product_url: str) -> str:
+    """Get product image url from product page."""
     response = await utils.make_get_request(product_url, headers=db_aps.PRODUCT_HEADERS)
     if not response:
         avito_parser_logger.debug('Failed to parse product image. Set default url')

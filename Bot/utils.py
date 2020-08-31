@@ -3,7 +3,7 @@ import datetime
 from logging import getLogger
 import os
 import traceback
-import typing
+from typing import Optional, List
 
 from aiogram import Bot
 import httpx
@@ -19,7 +19,8 @@ _user_agents = None
 _registered_providers = None
 
 
-async def handle_exception(logger_name, additional_text=None):
+async def handle_exception(logger_name: str, additional_text: Optional[str] = None):
+    """Async handle exception with traceback and send it to TG."""
     log_traceback = get_log_traceback(logger_name)
     if additional_text:
         log_traceback += '\n' + additional_text
@@ -27,7 +28,7 @@ async def handle_exception(logger_name, additional_text=None):
 
 
 def get_log_traceback(logger_name,
-                      timezone_offset: datetime.timedelta = datetime.timedelta(hours=3)):
+                      timezone_offset: datetime.timedelta = datetime.timedelta(hours=3)) -> str:
     """Get str traceback with logger name and timezone offset (default = +3 Moscow)."""
     time = datetime.datetime.utcnow() + timezone_offset
     tb = traceback.format_exc()
@@ -35,7 +36,8 @@ def get_log_traceback(logger_name,
     return exception_text
 
 
-async def send_error_log_async_to_telegram(text):
+async def send_error_log_async_to_telegram(text: str):
+    """Send string exception traceback to telegram log_chat."""
     chat_id = os.environ.get('TG_LOG_CHAT_ID')
     message_max_length = 4096
 
@@ -49,7 +51,8 @@ async def send_error_log_async_to_telegram(text):
         await logger_bot.send_message(chat_id, part)
 
 
-def split_text_on_parts(text, message_max_length):
+def split_text_on_parts(text: str, message_max_length: int) -> List[str]:
+    """Split text on parts by max length (coz telegram have message max length equal 4096)."""
     parts = []
     while text:
         if len(text) <= message_max_length:
@@ -66,7 +69,8 @@ def split_text_on_parts(text, message_max_length):
     return parts
 
 
-def get_logger_bot():
+def get_logger_bot() -> Bot:
+    """Get logger bot instance, create it if it wasn't already created (Singletone)."""
     global _log_bot
     if not _log_bot:
         tg_bot_token = os.environ.get('TG_LOG_BOT_TOKEN')
@@ -75,9 +79,8 @@ def get_logger_bot():
     return _log_bot
 
 
-def get_user_agent_header(limit=300):
+def get_user_agent_header(limit: int = 300) -> dict:
     """Get random user agent header."""
-
     global _user_agents
     if not _user_agents:
         software_names = [SoftwareName.CHROME.value, SoftwareName.FIREFOX.value]
@@ -90,9 +93,8 @@ def get_user_agent_header(limit=300):
     return agent_header
 
 
-def get_random_proxy():
-    """Get proxy from _registered_providers and remove anonymity and country info."""
-
+def get_random_proxy() -> str:
+    """Get proxy from _registered_providers (exclude anonymity and country info)."""
     if not _registered_providers:
         parse_providers()
     return str(_registered_providers.get_random_proxy()).split(' ')[0]
@@ -100,15 +102,13 @@ def get_random_proxy():
 
 def parse_providers():
     """Updates registered providers and parse proxies of them."""
-
     global _registered_providers
     _registered_providers = RegisteredProviders()
     _registered_providers.parse_providers()
 
 
-async def make_get_request(url: str, headers: dict = None) -> typing.Optional[httpx.Response]:
+async def make_get_request(url: str, headers: dict = None) -> Optional[httpx.Response]:
     """Make async GET request with proxy."""
-
     if not headers:
         headers = dict()
     for _ in range(100):
@@ -130,5 +130,5 @@ async def make_get_request(url: str, headers: dict = None) -> typing.Optional[ht
             response.raise_for_status()
             utils_logger.debug('Got right response')
             return response
-    utils_logger.debug('Made 100 requests, None of them ended well')
+    utils_logger.debug('Made 100 requests, none of them ended well')
     return None

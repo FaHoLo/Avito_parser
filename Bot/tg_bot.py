@@ -47,7 +47,8 @@ def main():
 
 
 @dispatcher.errors_handler()
-async def errors_handler(update, exception):
+async def errors_handler(update, exception) -> bool:
+    """Aiogram errors handler."""
     logger_name = 'avito_bot_logger'
     await utils.handle_exception(logger_name)
     return True
@@ -55,6 +56,7 @@ async def errors_handler(update, exception):
 
 @dispatcher.message_handler(state='*', commands=['start'])
 async def send_welcome(message: types.Message, state: FSMContext):
+    """Send welcome message."""
     current_state = await state.get_state()
     if current_state:
         await state.finish()
@@ -65,6 +67,7 @@ async def send_welcome(message: types.Message, state: FSMContext):
 
 @dispatcher.message_handler(state='*', commands=['help'])
 async def send_help(message: types.Message, state: FSMContext):
+    """Send help message."""
     current_state = await state.get_state()
     if current_state:
         await state.finish()
@@ -78,6 +81,7 @@ async def send_help(message: types.Message, state: FSMContext):
 
 @dispatcher.message_handler(state='*', commands=['cancel'])
 async def cancel_handler(message: types.Message, state: FSMContext):
+    """Cancel all states and send message about it."""
     current_state = await state.get_state()
 
     cancel_text = 'Отправь /help чтобы получить подсказку.'
@@ -94,6 +98,7 @@ async def cancel_handler(message: types.Message, state: FSMContext):
 
 @dispatcher.message_handler(state='*', commands=['add_search'])
 async def start_search_adding(message: types.Message):
+    """Start search adding conversation."""
     # TODO check for search number, set limit
     text = dedent('''\
     Ожидаю ссылку на поиск, пример:
@@ -107,6 +112,7 @@ async def start_search_adding(message: types.Message):
 
 @dispatcher.message_handler(state=AddSearch.waiting_url)
 async def add_search_url_to_db(message: types.Message, state: FSMContext):
+    """Add new search url to db. Finish AddSearch state if success."""
     if not message.text.startswith('https://www.avito.ru/'):
         await message.answer('Невереная ссылка, попробуй еще раз')
         bot_logger.debug(f'Got wrong url: {message.text} from {message.chat.id}')
@@ -126,6 +132,7 @@ async def add_search_url_to_db(message: types.Message, state: FSMContext):
 
 @dispatcher.message_handler(state='*', commands=['del_search'])
 async def start_search_deletion(message: types.Message):
+    """Start search deletion conversation."""
     exisiting_searches = db_aps.get_user_existing_searches(message.chat.id)
     if not exisiting_searches:
         await message.answer('У вас нет запущенных поисков')
@@ -147,6 +154,7 @@ async def start_search_deletion(message: types.Message):
 
 @dispatcher.message_handler(state=DelSearch.waiting_search_number)
 async def delete_search(message: types.Message, state: FSMContext):
+    """Delete search from db. Finish DelSearch state if success."""
     try:
         search_number = int(message.text)
     except ValueError:

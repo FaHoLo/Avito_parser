@@ -2,7 +2,7 @@ from asyncio import sleep
 from logging import getLogger
 import os
 from random import randint
-from typing import Optional, Tuple
+from typing import Tuple
 
 import redis
 
@@ -90,7 +90,7 @@ def collect_searches() -> dict:
     return searches
 
 
-async def start_expired_products_collector(sleep_time=43200):
+async def start_expired_products_collector(sleep_time: int = 43200):
     """Runs collector witch remove expired products from db."""
     while True:
         db_logger.debug('Starting new cycle stage of expired products collector')
@@ -122,14 +122,14 @@ async def find_expired_products() -> None:
     db_logger.debug(f'Deleted {len(expired_keys)} expired keys from db')
 
 
-async def _is_expired(product_key: str) -> Optional[bool]:
+async def _is_expired(product_key: str) -> bool:
     """Get product page and check for expiration selectors in it."""
     db = get_database_connection()
     expiration_selectors = ['item-closed-warning', 'item-view-warning-content']
     product_url = db.hget(product_key, 'product_url').decode('utf-8')
     response = await utils.make_get_request(product_url, headers=PRODUCT_HEADERS)
     if not response:
-        return None
+        return False
     db_logger.debug(f'Got response status code {response.status_code}')
     if response.status_code == 301:
         return True
@@ -137,7 +137,7 @@ async def _is_expired(product_key: str) -> Optional[bool]:
         if response.text.find(selector) != -1:
             return True
             db_logger.debug('Found expiration selector')
-    return None
+    return False
 
 
 def add_new_search(user_id: str, url: str):
