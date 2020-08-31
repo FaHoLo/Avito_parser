@@ -26,8 +26,9 @@ async def handle_exception(logger_name, additional_text=None):
     await send_error_log_async_to_telegram(log_traceback)
 
 
-def get_log_traceback(logger_name):
-    timezone_offset = datetime.timedelta(hours=3)  # Moscow
+def get_log_traceback(logger_name,
+                      timezone_offset: datetime.timedelta = datetime.timedelta(hours=3)):
+    """Get str traceback with logger name and timezone offset (default = +3 Moscow)."""
     time = datetime.datetime.utcnow() + timezone_offset
     tb = traceback.format_exc()
     exception_text = f'{time} - {logger_name} - ERROR\n{tb}'
