@@ -8,7 +8,6 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from dotenv import load_dotenv
 
-import avito_parser
 import db_aps
 import utils
 
@@ -31,19 +30,13 @@ dispatcher = Dispatcher(
 
 
 class AddSearch(StatesGroup):
+    """Add search states group."""
     waiting_url = State()
 
 
 class DelSearch(StatesGroup):
+    """Delete search states group."""
     waiting_search_number = State()
-
-
-def main():
-    parser_sleep_time = 1800
-    collector_sleep_time = 43200  # 12 hours
-    dispatcher.loop.create_task(avito_parser.start_parser(bot, parser_sleep_time))
-    dispatcher.loop.create_task(db_aps.start_expired_products_collector(collector_sleep_time))
-    executor.start_polling(dispatcher)
 
 
 @dispatcher.errors_handler()
@@ -175,7 +168,3 @@ async def delete_search(message: types.Message, state: FSMContext):
     await state.finish()
     await message.answer('Поиск удален', reply_markup=types.ReplyKeyboardRemove())
     bot_logger.debug(f'Search deleted for {message.chat.id}')
-
-
-if __name__ == '__main__':
-    main()
