@@ -101,7 +101,7 @@ def get_random_proxy() -> str:
 
 
 def parse_providers():
-    """Updates registered providers and parse proxies of them."""
+    """Update registered providers and parse proxies of them."""
     global _registered_providers
     _registered_providers = RegisteredProviders()
     _registered_providers.parse_providers()
