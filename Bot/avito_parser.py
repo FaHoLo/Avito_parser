@@ -130,8 +130,9 @@ async def get_product_image_url(product_url: str) -> str:
     if not response:
         avito_parser_logger.debug('Failed to parse product image. Set default url')
         return DEFAULT_IMG
-    img_url = 'https:{}'.format(
-        BeautifulSoup(response.text, 'lxml').select_one('.gallery-img-frame')['data-url'])
+    img_url = str(
+        BeautifulSoup(response.text, 'lxml').select_one('.gallery-img-frame')['data-url']
+    )
     avito_parser_logger.debug(f'Got product image url: {img_url}')
     return img_url
 
