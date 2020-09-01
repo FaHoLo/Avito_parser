@@ -21,12 +21,11 @@ PRODUCT_HEADERS = {
     'Accept-Language': 'ru,en-US;q=0.7,en;q=0.3',
     # 'Cache-Control': 'max-age=0',
     # 'DNT': '1',
-    'Host': 'www.avito.ru',
+    # 'Host': 'www.avito.ru',
     # 'TE': 'Trailers',
-    'Upgrade-Insecure-Requests': '1',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:79.0) Gecko/20100101 Firefox/79.0',
-}
-# TODO find right headers (all product requests failed with 403, 429)
+    # 'Upgrade-Insecure-Requests': '1',
+    # 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:79.0) Gecko/20100101 Firefox/79.0',
+}  # Сommented headers are left for possible request checks
 
 
 def get_database_connection() -> redis.Redis:
