@@ -141,6 +141,7 @@ async def _is_expired(product_key: str) -> bool:
 
 
 def add_new_search(user_id: str, url: str):
+    """Add new search url to user's search hash."""
     db = get_database_connection()
     db_key = f'{DB_SEARCH_PREFIX}{user_id}'
     existing_searches = db.hvals(db_key)
@@ -149,10 +150,11 @@ def add_new_search(user_id: str, url: str):
     else:
         search_number = len(existing_searches) + 1
     db.hmset(db_key, {search_number: url})
-    db_logger.debug(f'Add new search {db_key}')
+    db_logger.debug(f'Added new search {db_key}')
 
 
 def get_user_existing_searches(user_id: str):
+    """Get user's existing searches."""
     db = get_database_connection()
     db_key = f'{DB_SEARCH_PREFIX}{user_id}'
     existing_searches = db.hgetall(db_key)
@@ -167,6 +169,7 @@ def get_user_existing_searches(user_id: str):
 
 
 def remove_search(user_id: str, search_number: str):
+    """Remove search, its products and update remaining searches hash keys."""
     remove_products_by_search_number(user_id, search_number)
     db = get_database_connection()
     db_key = f'{DB_SEARCH_PREFIX}{user_id}'
@@ -184,6 +187,7 @@ def remove_search(user_id: str, search_number: str):
 
 
 def remove_products_by_search_number(user_id: str, search_number: str):
+    """Remove products of search."""
     db = get_database_connection()
     search_url = db.hget(f'{DB_SEARCH_PREFIX}{user_id}', search_number)
     products_pattern = f'{DB_PRODUCT_PREFIX}{user_id}:*'
