@@ -127,8 +127,12 @@ async def make_get_request(url: str, headers: dict = None) -> Optional[httpx.Res
                     httpx.TimeoutException, TimeoutError) as e:
                 utils_logger.debug(f'Got exception while GET request: {e}')
                 continue
-            response.raise_for_status()
+            try:
+                response.raise_for_status()
+            except httpx.HTTPStatusError as e:
+                utils_logger.debug(f'Got exception in response status check: {e}')
+                continue
             utils_logger.debug('Got right response')
             return response
-    utils_logger.debug('Made 100 requests, none of them ended well')
+    utils_logger.warning('Made 100 requests, none of them ended well')
     return None
