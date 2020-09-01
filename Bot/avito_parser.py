@@ -55,6 +55,7 @@ async def start_parser(bot: Bot, sleep_time: int = 1800):
     """
     while True:
         avito_parser_logger.debug('Starting new parser cycle stage')
+        utils.parse_providers()
         searches = db_aps.collect_searches()
         for user_id, user_searches in searches.items():
             await check_user_searches(user_id, user_searches, bot)
