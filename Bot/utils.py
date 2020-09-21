@@ -2,6 +2,7 @@ from concurrent.futures._base import TimeoutError
 import datetime
 from logging import getLogger
 import os
+from ssl import SSLError
 import traceback
 from typing import Optional, List
 
@@ -124,7 +125,8 @@ async def make_get_request(url: str, headers: dict = None) -> Optional[httpx.Res
                 response = await client.get(url, allow_redirects=False)
             except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout,
                     httpx.ReadError, httpx.RemoteProtocolError, httpx.ProxyError,
-                    httpx.TimeoutException, TimeoutError, ConnectionResetError) as e:
+                    httpx.TimeoutException, TimeoutError, ConnectionResetError,
+                    SSLError) as e:
                 utils_logger.debug(f'Got exception while GET request: {e}')
                 continue
             try:
