@@ -131,9 +131,16 @@ async def get_product_image_url(product_url: str) -> str:
     if not response:
         avito_parser_logger.debug('Failed to parse product image. Set default url')
         return DEFAULT_IMG
-    img_url = str(
-        BeautifulSoup(response.text, 'lxml').select_one('.gallery-img-frame')['data-url']
-    )
+    try:
+        page_data = BeautifulSoup(response.text, 'lxml')
+        img_url = str(page_data.select_one('.gallery-img-frame')['data-url'])
+    except TypeError:
+        # debugging image parsing, will be depricated soon
+        logger = utils.get_logger_bot()
+        chat_id = os.environ.get('TG_LOG_CHAT_ID')
+        await utils.handle_exception('avito_parser_logger', 'into_image_parse')
+        await logger.send_document(chat_id, ('product_page.html', page_data.encode()))
+        return DEFAULT_IMG
     avito_parser_logger.debug(f'Got product image url: {img_url}')
     return img_url
 
