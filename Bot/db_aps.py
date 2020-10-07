@@ -24,7 +24,7 @@ PRODUCT_HEADERS = {
     # 'Host': 'www.avito.ru',
     # 'TE': 'Trailers',
     # 'Upgrade-Insecure-Requests': '1',
-    # 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:79.0) Gecko/20100101 Firefox/79.0',
+    # 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:79.0) Gecko/20100101 Firefox/79.0'
 }  # Сommented headers are left for possible request checks
 
 
@@ -35,7 +35,8 @@ def get_database_connection() -> redis.Redis:
         database_password = os.getenv('DB_PASSWORD')
         database_host = os.getenv('DB_HOST')
         database_port = os.getenv('DB_PORT')
-        _database = redis.Redis(host=database_host, port=database_port, password=database_password)
+        _database = redis.Redis(host=database_host, port=database_port,  # type: ignore
+                                password=database_password)
         db_logger.debug('Got new db connection')
     return _database
 

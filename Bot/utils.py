@@ -98,7 +98,7 @@ def get_random_proxy() -> str:
     """Get proxy from _registered_providers (exclude anonymity and country info)."""
     if not _registered_providers:
         parse_providers()
-    return str(_registered_providers.get_random_proxy()).split(' ')[0]
+    return str(_registered_providers.get_random_proxy()).split(' ')[0]  # type: ignore
 
 
 def parse_providers():
@@ -117,7 +117,7 @@ async def make_get_request(url: str, headers: dict = None) -> Optional[httpx.Res
         headers.update(agent_header)
         proxies = {'https://': f'http://{get_random_proxy()}'}
         async with httpx.AsyncClient(headers=headers,
-                                     proxies=proxies,
+                                     proxies=proxies,  # type: ignore
                                      timeout=10,
                                      verify=False) as client:
             try:
