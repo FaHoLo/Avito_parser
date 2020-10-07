@@ -199,3 +199,10 @@ def remove_products_by_search_number(user_id: str, search_number: str):
 
     db.delete(*keys_for_deletion)
     db_logger.debug(f'Removed products for search {search_number} of user {user_id}')
+
+
+def get_admins() -> Tuple[int, ...]:
+    """Get admins from db."""
+    db = get_database_connection()
+    admins = [int(admin_id) for admin_id in db.lrange('avito:admin_list', 0, -1)]
+    return tuple(admins)

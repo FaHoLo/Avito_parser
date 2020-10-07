@@ -92,15 +92,41 @@ async def cancel_handler(message: types.Message, state: FSMContext):
 @dispatcher.message_handler(state='*', commands=['add_search'])
 async def start_search_adding(message: types.Message):
     """Start search adding conversation."""
-    # TODO check for search number, set limit
-    text = dedent('''\
+    not_paid_search_limit = 2
+    waiting_url = dedent('''\
     Ожидаю ссылку на поиск, пример:
     https://www.avito.ru/moskva_i_mo?q=bmv
     Отправь /cancel, чтобы отменить добавление нового поиска
     ''')
+    new_search_not_allowed = dedent(f'''\
+            В данный момент бот находится на этапе разработки, \
+            поэтому максимальное количество поисков на одного \
+            пользователя равно {not_paid_search_limit}.
+            Чтобы запустить новый поиск, удалите один из \
+            существующих: /del_search
+        ''')
+    if message.chat.id in db_aps.get_admins():
+        await AddSearch.waiting_url.set()
+        await message.answer(waiting_url, disable_web_page_preview=True)
+        bot_logger.debug(f'Start adding new serach for {message.chat.id}')
+        return
+
+    # TODO check for paid searches.
+    # user_limit = get_user_search_limit(message.chat.id)
+    # ... and len(exist) == user_limit
+    # and change text new_search_not_allowed
+    existing_searches = db_aps.get_user_existing_searches(message.chat.id)
+    if existing_searches and len(existing_searches) == not_paid_search_limit:
+        text = new_search_not_allowed
+        debug_text = f'New search wasn\'t allowed to user {message.chat.id}. \
+            He had {len(existing_searches)} active searches.'
+    else:
+        text = waiting_url
+        debug_text = f'Start adding new serach for {message.chat.id}'
+
     await AddSearch.waiting_url.set()
     await message.answer(text, disable_web_page_preview=True)
-    bot_logger.debug(f'Start adding new serach for {message.chat.id}')
+    bot_logger.debug(debug_text)
 
 
 @dispatcher.message_handler(state=AddSearch.waiting_url)
