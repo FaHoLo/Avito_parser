@@ -9,7 +9,7 @@ from typing import Tuple, List
 from aiogram import Bot
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
-from httpx import HTTPError
+from httpx import StreamError
 
 import db_aps
 import utils
@@ -71,8 +71,8 @@ async def check_user_searches(user_id: str, user_searches: list, bot: Bot):
             await send_product_updates(bot, user_id, updated_products, url)
             await send_product_updates(bot, user_id, new_products, url, is_new_products=True)
             await sleep(randint(10, 20))
-        except HTTPError:
-            avito_parser_logger.debug(f'Got HTTPError for {url}')
+        except StreamError:
+            avito_parser_logger.debug(f'Got StreamError for {url}')
             await sleep(randint(10, 20))
             continue
         except Exception:
@@ -103,7 +103,7 @@ async def parse_avito_products_update(url: str, user_id: str) -> Tuple[list, lis
     """Parse avito url and find new and updated products."""
     avito_page = await get_avito_soup_page(url)
     if not avito_page:
-        raise HTTPError('Failed to download search page', request=url)
+        raise StreamError('Failed to download search page.')
     products = collect_products(avito_page)
     product_infos = parse_product_infos(products)
     new_products, updated_products = db_aps.find_new_and_updated_products(product_infos, user_id)
