@@ -107,20 +107,14 @@ async def parse_avito_products_update(url: str, user_id: str) -> Tuple[list, lis
     products = collect_products(avito_page)
     product_infos = parse_product_infos(products)
     new_products, updated_products = db_aps.find_new_and_updated_products(product_infos, user_id)
-    for product in new_products:
-        try:
-            product['img_url'] = await get_product_image_url(product['product_url'])
-        except Exception:  # Image parsing is now in debugging state
-            product['img_url'] = DEFAULT_IMG
-            await utils.handle_exception('avito_parser_logger', 'image_parse')
-            continue
-    for product in updated_products:
-        try:
-            product['img_url'] = await get_product_image_url(product['product_url'])
-        except Exception:
-            product['img_url'] = DEFAULT_IMG
-            await utils.handle_exception('avito_parser_logger', 'image_parse')
-            continue
+    for products in (new_products, updated_products):
+        for product in products:
+            try:
+                product['img_url'] = await get_product_image_url(product['product_url'])
+            except Exception:  # Image parsing is now in debugging state
+                product['img_url'] = DEFAULT_IMG
+                await utils.handle_exception('avito_parser_logger', 'image_parse')
+                continue
     avito_parser_logger.debug('Products update had been parsed')
     return new_products, updated_products
 
