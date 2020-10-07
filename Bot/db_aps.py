@@ -81,6 +81,7 @@ def collect_searches() -> dict:
     # All scan methods returns cursor position and then list of keys: (0, [key1, key2])
     search_keys = db.scan(0, match=search_pattern, count=10000)[1]
     search_keys = [key.decode('utf-8') for key in search_keys]
+    search_keys = remove_banned_users(search_keys)
     searches = {}
     for key in search_keys:
         user_id = key.split(':')[-1]
@@ -88,6 +89,22 @@ def collect_searches() -> dict:
         searches[user_id] = user_searches
     db_logger.debug(f'Collected {len(searches)} searches')
     return searches
+
+
+def remove_banned_users(search_keys: list) -> list:
+    """Remove banned users from search keys."""
+    banned_users = os.environ.get('BAN_LIST')
+    if not banned_users:
+        return search_keys
+    else:
+        banned_users = banned_users.split(',')  # type: ignore
+
+    for key in search_keys.copy():
+        for user_id in banned_users:
+            if user_id in key:
+                search_keys.remove(key)
+                break
+    return search_keys
 
 
 async def start_expired_products_collector(sleep_time: int = 43200):
