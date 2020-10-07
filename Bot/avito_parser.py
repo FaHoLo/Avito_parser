@@ -125,18 +125,24 @@ async def get_product_image_url(product_url: str) -> str:
     if not response:
         avito_parser_logger.debug('Failed to parse product image. Set default url')
         return DEFAULT_IMG
+
+    page_data = BeautifulSoup(response.text, 'lxml')
     try:
-        page_data = BeautifulSoup(response.text, 'lxml')
         img_url = str(page_data.select_one('.gallery-img-frame')['data-url'])
     except TypeError:
-        # debugging image parsing, will be depricated soon
+        # Sometimes request fetch page with no product image,
+        # so there is no gallery-img-frame in it.
         logger = utils.get_logger_bot()
         chat_id = os.environ.get('TG_LOG_CHAT_ID')
-        text = 'into_image_parse' + '\n\n' + str(page_data) + '\n\n\n' + response.text
-        # yes ^ is weird, but now it's hard to understand when and why error happends
+        text = 'into_image_parse: ' + f'response.code: {response.status_code}'
         await utils.handle_exception('avito_parser_logger', text)
-        await logger.send_document(chat_id, ('product_page.html', page_data.encode()))
-        return DEFAULT_IMG
+        try:
+            await logger.send_document(chat_id, ('resp_text_page.html', response.text.encode()))
+            await logger.send_document(chat_id, ('product_page.html', page_data.encode()))
+        except Exception:
+            utils.handle_exception('avito_parser_logger', 'into_image_parse')
+        finally:
+            return DEFAULT_IMG
     avito_parser_logger.debug(f'Got product image url: {img_url}')
     return img_url
 
