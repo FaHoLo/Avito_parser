@@ -138,7 +138,7 @@ async def get_product_image_url(product_url: str) -> str:
         # debugging image parsing, will be depricated soon
         logger = utils.get_logger_bot()
         chat_id = os.environ.get('TG_LOG_CHAT_ID')
-        text = 'into_image_parse' + '\n\n' + page_data + '\n\n\n' + response.text
+        text = 'into_image_parse' + '\n\n' + str(page_data) + '\n\n\n' + response.text
         # yes ^ is weird, but now it's hard to understand when and why error happends
         await utils.handle_exception('avito_parser_logger', text)
         await logger.send_document(chat_id, ('product_page.html', page_data.encode()))
