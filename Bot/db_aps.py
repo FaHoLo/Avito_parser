@@ -149,7 +149,7 @@ async def _is_expired(product_key: str) -> bool:
     if not response:
         return False
     db_logger.debug(f'Got response status code {response.status_code}')
-    if response.status_code == 301:
+    if response.status_code in (301, 302):
         return True
     for selector in expiration_selectors:
         if response.text.find(selector) != -1:
