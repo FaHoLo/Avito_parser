@@ -108,7 +108,7 @@ async def start_search_adding(message: types.Message):
     if message.chat.id in db_aps.get_admins():
         await AddSearch.waiting_url.set()
         await message.answer(waiting_url, disable_web_page_preview=True)
-        bot_logger.debug(f'Start adding new serach for {message.chat.id}')
+        bot_logger.debug(f'Start adding new search for {message.chat.id}')
         return
 
     # TODO check for paid searches.
@@ -122,7 +122,7 @@ async def start_search_adding(message: types.Message):
             He had {len(existing_searches)} active searches.'
     else:
         text = waiting_url
-        debug_text = f'Start adding new serach for {message.chat.id}'
+        debug_text = f'Start adding new search for {message.chat.id}'
 
     await AddSearch.waiting_url.set()
     await message.answer(text, disable_web_page_preview=True)
