@@ -275,4 +275,3 @@ def get_user_products_amount(user_id: Union[str, int]) -> int:
     db = get_database_connection()
     product_keys = db.scan(0, match=f'{DB_PRODUCT_PREFIX}{user_id}:*', count=10000)[1]
     return len(product_keys)
-
