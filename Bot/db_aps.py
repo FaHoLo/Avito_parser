@@ -228,3 +228,10 @@ def get_admins() -> Tuple[int, ...]:
     db = get_database_connection()
     admins = [int(admin_id) for admin_id in db.lrange('avito:admin_list', 0, -1)]
     return tuple(admins)
+
+
+def get_super_admin() -> int:
+    """Get super admin id."""
+    db = get_database_connection()
+    return int(db.get('avito:superadmin'))
+

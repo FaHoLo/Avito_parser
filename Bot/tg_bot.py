@@ -9,6 +9,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from dotenv import load_dotenv
 
 import db_aps
+import keyboards
 import utils
 
 
@@ -37,6 +38,11 @@ class AddSearch(StatesGroup):
 class DelSearch(StatesGroup):
     """Delete search states group."""
     waiting_search_number = State()
+
+
+class AdminPanel(StatesGroup):
+    """Show and work with admin panel."""
+    waiting_admin_command = State()
 
 
 @dispatcher.errors_handler()
@@ -194,3 +200,30 @@ async def delete_search(message: types.Message, state: FSMContext):
     await state.finish()
     await message.answer('Поиск удален', reply_markup=types.ReplyKeyboardRemove())
     bot_logger.debug(f'Search deleted for {message.chat.id}')
+
+
+@dispatcher.message_handler(chat_id=db_aps.get_super_admin(),
+                            state='*', commands=['admin'])
+async def show_admin_panel(message: types.Message):
+    keyboard = collect_admin_panel_keyborad()
+    await AdminPanel.waiting_admin_command.set()
+    await message.answer('Панель администратора', reply_markup=keyboard)
+
+
+def collect_admin_panel_keyborad():
+    keyboard = types.InlineKeyboardMarkup()
+    keyboard.insert(keyboards.db_info)
+    keyboard.insert(keyboards.users)
+    keyboard.add(keyboards.exit_admin)
+    return keyboard
+
+
+@dispatcher.callback_query_handler(
+    lambda callback: callback.data == keyboards.exit_admin.callback_data,
+    chat_id=db_aps.get_super_admin(),
+    state=AdminPanel.waiting_admin_command)
+async def handle_admin_exit(callback: types.CallbackQuery, state: FSMContext):
+    state.finish()
+    await callback.answer('Admin panel exit')
+    await callback.message.delete()
+
