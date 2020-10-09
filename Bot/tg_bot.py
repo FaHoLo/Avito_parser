@@ -326,9 +326,10 @@ async def handle_admin_user_id(callback: types.CallbackQuery):
         text += f'Поиск №{search_number}:\n' + f'{search_url}\n'
 
     keyboard = types.InlineKeyboardMarkup()
-    keyboard.add(keyboards.users)
-    keyboard.add(keyboards.admin_panel)
-    keyboard.add(keyboards.exit_admin)
+    keyboard.row_width = 2
+    keyboard.insert(keyboards.users)
+    keyboard.insert(keyboards.admin_panel)
+    keyboard.insert(keyboards.exit_admin)
 
     # TODO user photo
     await callback.answer(f'User info: {chat_info.username}')
