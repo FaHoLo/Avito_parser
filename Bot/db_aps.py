@@ -53,7 +53,7 @@ def find_new_and_updated_products(product_infos: list, user_id) -> Tuple[list, l
             continue
         if product['price'] != db_product[b'price'].decode('utf-8'):
             updated_products.append(product)
-    db_logger.debug(f'Found {len(new_products)} new and {len(updated_products)} products')
+    db_logger.debug(f'Found {len(new_products)} new and {len(updated_products)} updated products')
     return new_products, updated_products
 
 
