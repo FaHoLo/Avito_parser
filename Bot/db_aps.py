@@ -2,7 +2,7 @@ from asyncio import sleep
 from logging import getLogger
 import os
 from random import randint
-from typing import Tuple
+from typing import Tuple, Union
 
 import redis
 
@@ -175,7 +175,7 @@ def add_new_search(user_id: str, url: str):
     db_logger.debug(f'Added new search {db_key}')
 
 
-def get_user_existing_searches(user_id: str):
+def get_user_existing_searches(user_id: Union[str, int]):
     """Get user's existing searches."""
     db = get_database_connection()
     db_key = f'{DB_SEARCH_PREFIX}{user_id}'
