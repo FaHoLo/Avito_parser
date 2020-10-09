@@ -6,6 +6,7 @@ from aiogram import Bot, Dispatcher, executor, types  # noqa: F401
 from aiogram.contrib.fsm_storage.redis import RedisStorage2
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
+from aiogram.utils.exceptions import BotBlocked
 from dotenv import load_dotenv
 
 import db_aps
@@ -258,3 +259,78 @@ async def handle_admin_panel(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer('Admin panel')
     await callback.message.edit_text('Панель администратора', reply_markup=keyboard)
 
+
+@dispatcher.callback_query_handler(
+    lambda callback: keyboards.users.callback_data in callback.data,
+    chat_id=db_aps.get_super_admin(),
+    state=AdminPanel.waiting_admin_command)
+async def handle_admin_users(callback: types.CallbackQuery):
+    # TODO start timer for keyboard deletion and state finish | celery?
+    users_callback = keyboards.users.callback_data
+    users_on_page = 10
+
+    if callback.data == users_callback:
+        page = 0
+    else:
+        # cb.data: users:1, where 1 - is page (starts from 0)
+        page = int(callback.data[len(users_callback):])
+    first_user_number = page * users_on_page
+    last_user_number = first_user_number + users_on_page
+
+    user_ids = db_aps.get_users()
+    users_amount = len(user_ids)
+    text = f'Всего пользователей: {users_amount}. Выбери одного:'
+    keyboard = types.InlineKeyboardMarkup()
+    keyboard.row_width = 2
+
+    for user in user_ids[first_user_number:last_user_number]:
+        chat_info = await bot.get_chat(user)
+        keyboard.insert(types.InlineKeyboardButton(chat_info.username,
+                                                   callback_data=f'user_id:{chat_info.id}'))
+
+    if page != 0:
+        keyboard.add(keyboards.get_pagination_button('previous', f'users:{page-1}'))
+    if last_user_number < users_amount and page != 0:
+        keyboard.insert(keyboards.get_pagination_button('next', f'users:{page-1}'))
+    if last_user_number < users_amount and page == 0:
+        keyboard.add(keyboards.get_pagination_button('next', f'users:{page-1}'))
+    keyboard.add(keyboards.admin_panel)
+
+    await callback.answer(f'Users, page {page+1}')
+    await callback.message.edit_text(text=text, reply_markup=keyboard)
+
+
+@dispatcher.callback_query_handler(
+    lambda callback: 'user_id' in callback.data,
+    chat_id=db_aps.get_super_admin(),
+    state=AdminPanel.waiting_admin_command)
+async def handle_admin_user_id(callback: types.CallbackQuery):
+    user_id = int(callback.data[len('user_id')+1:])  # data = user_id:123456
+    try:
+        chat_info = await bot.get_chat(user_id)
+    except BotBlocked:
+        callback.answer('BotBlocked')
+        return
+
+    searches = db_aps.get_user_existing_searches(user_id)
+    products_amount = db_aps.get_user_products_amount(user_id)
+
+    text = dedent(f'''\
+        ID: {chat_info.id}
+        Full name: {chat_info.full_name}
+        Username: {chat_info.username}
+        Количество активных поисков: {len(searches)}
+        Продуктов в базе: {products_amount}
+    ''')
+    for search_number, search_url in searches.items():
+        text += f'Поиск №{search_number}:\n' + f'{search_url}\n'
+
+    keyboard = types.InlineKeyboardMarkup()
+    keyboard.add(keyboards.users)
+    keyboard.add(keyboards.admin_panel)
+    keyboard.add(keyboards.exit_admin)
+
+    # TODO user photo
+    await callback.answer(f'User info: {chat_info.username}')
+    await callback.message.edit_text(text=text, reply_markup=keyboard,
+                                     disable_web_page_preview=True)

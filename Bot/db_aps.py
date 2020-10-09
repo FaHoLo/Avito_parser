@@ -235,6 +235,7 @@ def get_super_admin() -> int:
     db = get_database_connection()
     return int(db.get('avito:superadmin'))
 
+
 def get_useful_db_info():
     """Collect useful info about db."""
     db = get_database_connection()
@@ -256,3 +257,22 @@ def get_useful_db_info():
         'used_memory_peak_human': db_info['used_memory_peak_human'].replace('M', ' MB'),
     }
     return usefull_info
+
+
+def get_users() -> Tuple[int, ...]:
+    """Count user ids in db."""
+    db = get_database_connection()
+    user_searches = db.scan(0, match=f'{DB_SEARCH_PREFIX}*', count=10000)[1]
+    user_ids = [
+        int(user_search.decode('utf-8').lstrip(DB_SEARCH_PREFIX))
+        for user_search in user_searches
+    ]
+    return tuple(user_ids)
+
+
+def get_user_products_amount(user_id: Union[str, int]) -> int:
+    """Count user product keys."""
+    db = get_database_connection()
+    product_keys = db.scan(0, match=f'{DB_PRODUCT_PREFIX}{user_id}:*', count=10000)[1]
+    return len(product_keys)
+
