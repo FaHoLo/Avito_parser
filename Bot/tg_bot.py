@@ -309,7 +309,7 @@ async def handle_admin_user_id(callback: types.CallbackQuery):
     try:
         chat_info = await bot.get_chat(user_id)
     except BotBlocked:
-        callback.answer('BotBlocked')
+        await callback.answer('BotBlocked')
         return
 
     searches = db_aps.get_user_existing_searches(user_id)
