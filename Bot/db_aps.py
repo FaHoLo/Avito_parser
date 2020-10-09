@@ -235,3 +235,24 @@ def get_super_admin() -> int:
     db = get_database_connection()
     return int(db.get('avito:superadmin'))
 
+def get_useful_db_info():
+    """Collect useful info about db."""
+    db = get_database_connection()
+    db_info = db.info()
+
+    input_MB = round(db_info['total_net_input_bytes']/1048576, 2)
+    output_MB = round(db_info['total_net_output_bytes']/1048576, 2)
+    usefull_info = {
+        'connected_clients': db_info['connected_clients'],
+        'connected_slaves': db_info['connected_slaves'],
+        'db0_keys_amount': db_info['db0']['keys'],
+        'keyspace_hits': db_info['keyspace_hits'],
+        'commands_processed': db_info['total_commands_processed'],
+        'connections_received': db_info['total_connections_received'],
+        'total_net_input_MB': f'{input_MB} MB',
+        'total_net_output_MB': f'{output_MB} MB',
+        'uptime_in_days': db_info['uptime_in_days'],
+        'used_memory_human': db_info['used_memory_human'].replace('M', ' MB'),
+        'used_memory_peak_human': db_info['used_memory_peak_human'].replace('M', ' MB'),
+    }
+    return usefull_info

@@ -227,3 +227,34 @@ async def handle_admin_exit(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer('Admin panel exit')
     await callback.message.delete()
 
+
+@dispatcher.callback_query_handler(
+    lambda callback: callback.data == keyboards.db.callback_data,
+    chat_id=db_aps.get_super_admin(),
+    state=AdminPanel.waiting_admin_command)
+async def handle_admin_db_info(callback: types.CallbackQuery):
+    db_info = db_aps.get_useful_db_info()
+    text = ''
+    for key, value in db_info.items():
+        text += f'{key}: {value}\n'
+
+    text = '```\n' + text + '```'
+
+    keyboard = types.InlineKeyboardMarkup()
+    keyboard.add(keyboards.admin_panel)
+    keyboard.add(keyboards.exit_admin)
+
+    await callback.answer('DB info')
+    await callback.message.edit_text(text, reply_markup=keyboard,
+                                     parse_mode=types.ParseMode.MARKDOWN_V2)
+
+
+@dispatcher.callback_query_handler(
+    lambda callback: callback.data == keyboards.admin_panel.callback_data,
+    chat_id=db_aps.get_super_admin(),
+    state=AdminPanel.waiting_admin_command)
+async def handle_admin_panel(callback: types.CallbackQuery, state: FSMContext):
+    keyboard = collect_admin_panel_keyborad()
+    await callback.answer('Admin panel')
+    await callback.message.edit_text('Панель администратора', reply_markup=keyboard)
+
