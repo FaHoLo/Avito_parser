@@ -61,6 +61,10 @@ def store_watched_product_info(product_info: dict, user_id: str, search_url: str
     """Store product into redis db."""
     db = get_database_connection()
     product_key = f'{DB_PRODUCT_PREFIX}{user_id}:{product_info["product_id"]}'
+    # TODO check, if all product ads expires every month? even after edits?
+    # If they do, we can set "expires" value to db product entry and help
+    # expired products collector (he then can check, if product expires soon
+    # and not handle it)
     db.hmset(
         product_key,
         {
