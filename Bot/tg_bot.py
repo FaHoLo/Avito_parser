@@ -331,7 +331,6 @@ async def handle_admin_user_id(callback: types.CallbackQuery):
     keyboard.insert(keyboards.admin_panel)
     keyboard.insert(keyboards.exit_admin)
 
-    # TODO user photo
     await callback.answer(f'User info: {chat_info.username}')
     await callback.message.edit_text(text=text, reply_markup=keyboard,
                                      disable_web_page_preview=True)
