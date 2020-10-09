@@ -213,7 +213,7 @@ async def show_admin_panel(message: types.Message):
 
 def collect_admin_panel_keyborad():
     keyboard = types.InlineKeyboardMarkup()
-    keyboard.insert(keyboards.db_info)
+    keyboard.insert(keyboards.db)
     keyboard.insert(keyboards.users)
     keyboard.add(keyboards.exit_admin)
     return keyboard
