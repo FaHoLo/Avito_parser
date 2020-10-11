@@ -206,6 +206,7 @@ async def delete_search(message: types.Message, state: FSMContext):
 @dispatcher.message_handler(chat_id=db_aps.get_super_admin(),
                             state='*', commands=['admin'])
 async def show_admin_panel(message: types.Message):
+    """Show admin panel to super admin only."""
     keyboard = keyboards.collect_admin_panel_keyboard()
     await AdminPanel.waiting_admin_command.set()
     await message.answer('Панель администратора', reply_markup=keyboard)
@@ -216,6 +217,7 @@ async def show_admin_panel(message: types.Message):
     chat_id=db_aps.get_super_admin(),
     state=AdminPanel.waiting_admin_command)
 async def handle_admin_exit(callback: types.CallbackQuery, state: FSMContext):
+    """Handle admin panel exit."""
     state.finish()
     await callback.answer('Admin panel exit')
     await callback.message.delete()
@@ -226,6 +228,7 @@ async def handle_admin_exit(callback: types.CallbackQuery, state: FSMContext):
     chat_id=db_aps.get_super_admin(),
     state=AdminPanel.waiting_admin_command)
 async def handle_admin_db_info(callback: types.CallbackQuery):
+    """Handle admin panel db command and show db info."""
     db_info = db_aps.get_useful_db_info()
     text = ''
     for key, value in db_info.items():
@@ -247,6 +250,7 @@ async def handle_admin_db_info(callback: types.CallbackQuery):
     chat_id=db_aps.get_super_admin(),
     state=AdminPanel.waiting_admin_command)
 async def handle_admin_panel(callback: types.CallbackQuery, state: FSMContext):
+    """Handle admin_panel command and show admin panel."""
     keyboard = keyboards.collect_admin_panel_keyboard()
     await callback.answer('Admin panel')
     await callback.message.edit_text('Панель администратора', reply_markup=keyboard)
@@ -257,6 +261,7 @@ async def handle_admin_panel(callback: types.CallbackQuery, state: FSMContext):
     chat_id=db_aps.get_super_admin(),
     state=AdminPanel.waiting_admin_command)
 async def handle_admin_users(callback: types.CallbackQuery):
+    """Handle users command and show users list with paginationg."""
     # TODO start timer for keyboard deletion and state finish | celery?
     users_callback = keyboards.users.callback_data
     users_on_page = 10
@@ -264,7 +269,7 @@ async def handle_admin_users(callback: types.CallbackQuery):
     if callback.data == users_callback:
         page = 0
     else:
-        # cb.data: users:1, where 1 - is page (starts from 0)
+        # cb.data == users:1, where 1 - is page (starts from 0)
         page = int(callback.data[len(users_callback):])
     first_user_number = page * users_on_page
     last_user_number = first_user_number + users_on_page
@@ -297,6 +302,7 @@ async def handle_admin_users(callback: types.CallbackQuery):
     chat_id=db_aps.get_super_admin(),
     state=AdminPanel.waiting_admin_command)
 async def handle_admin_user_id(callback: types.CallbackQuery):
+    """Handle user_id command and show user info."""
     user_id = int(callback.data[len('user_id')+1:])  # data = user_id:123456
     try:
         chat_info = await bot.get_chat(user_id)
