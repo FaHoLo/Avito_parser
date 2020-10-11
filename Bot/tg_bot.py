@@ -166,7 +166,7 @@ async def start_search_deletion(message: types.Message):
         return
     text = 'Вот список запущенных поисков.\nВыбери номер поиска, который хочешь удалить:\n\n'
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-    for search_number, search_url in exisiting_searches.items():
+    for search_number, search_url in sorted(exisiting_searches.items()):
         text += dedent(f'''\
             {search_number}-й поиск:
             {search_url}\n
