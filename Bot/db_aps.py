@@ -219,6 +219,9 @@ def remove_products_by_search_number(user_id: str, search_number: str):
         if db.hget(key, 'search_url') == search_url:
             keys_for_deletion.append(key)
 
+    if not keys_for_deletion:
+        db_logger.debug(f'Removed 0 products for search {search_number} of user {user_id}')
+        return
     db.delete(*keys_for_deletion)
     db_logger.debug(f'Removed products for search {search_number} of user {user_id}')
 
