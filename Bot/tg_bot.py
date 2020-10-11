@@ -206,17 +206,9 @@ async def delete_search(message: types.Message, state: FSMContext):
 @dispatcher.message_handler(chat_id=db_aps.get_super_admin(),
                             state='*', commands=['admin'])
 async def show_admin_panel(message: types.Message):
-    keyboard = collect_admin_panel_keyborad()
+    keyboard = keyboards.collect_admin_panel_keyboard()
     await AdminPanel.waiting_admin_command.set()
     await message.answer('Панель администратора', reply_markup=keyboard)
-
-
-def collect_admin_panel_keyborad():
-    keyboard = types.InlineKeyboardMarkup()
-    keyboard.insert(keyboards.db)
-    keyboard.insert(keyboards.users)
-    keyboard.add(keyboards.exit_admin)
-    return keyboard
 
 
 @dispatcher.callback_query_handler(
@@ -255,7 +247,7 @@ async def handle_admin_db_info(callback: types.CallbackQuery):
     chat_id=db_aps.get_super_admin(),
     state=AdminPanel.waiting_admin_command)
 async def handle_admin_panel(callback: types.CallbackQuery, state: FSMContext):
-    keyboard = collect_admin_panel_keyborad()
+    keyboard = keyboards.collect_admin_panel_keyboard()
     await callback.answer('Admin panel')
     await callback.message.edit_text('Панель администратора', reply_markup=keyboard)
 

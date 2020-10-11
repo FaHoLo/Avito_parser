@@ -1,4 +1,4 @@
-from aiogram.types import InlineKeyboardButton
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 
 admin_panel = InlineKeyboardButton('Панель админки', callback_data='admin_panel')
@@ -25,3 +25,11 @@ def get_pagination_button(direction: str, callback_data: str) -> InlineKeyboardB
 
     text = '→' if direction == 'next' else '←'
     return InlineKeyboardButton(text, callback_data=callback_data)
+
+
+def collect_admin_panel_keyboard():
+    keyboard = InlineKeyboardMarkup()
+    keyboard.insert(db)
+    keyboard.insert(users)
+    keyboard.add(exit_admin)
+    return keyboard
