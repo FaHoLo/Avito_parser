@@ -27,7 +27,7 @@ def start_bot():
         )
         avito_logger.debug('Starting avito parser in debug mode')
     else:
-        parser_sleep_time = 1800
+        parser_sleep_time = 300
         collector_sleep_time = 43200  # 12 hours
         avito_logger.debug('Starting normal avito parser')
     dispatcher.loop.create_task(start_parser(bot, parser_sleep_time))
