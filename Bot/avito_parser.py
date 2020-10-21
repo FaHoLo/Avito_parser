@@ -3,7 +3,6 @@ import logging
 import os
 from pprint import pprint
 from random import randint
-from textwrap import dedent
 from typing import Tuple, List
 
 from aiogram import Bot
@@ -12,6 +11,7 @@ from dotenv import load_dotenv
 from httpx import StreamError
 
 import db_aps
+import phrases
 import utils
 
 
@@ -82,18 +82,17 @@ async def check_user_searches(user_id: str, user_searches: list, bot: Bot):
 async def send_product_updates(bot: Bot, chat_id: str, product_infos: List[dict],
                                search_url: str, is_new_products: bool = False):
     """Send user's products updates to him."""
-    message_start = 'Объявление обновилось'
+    msg_type = phrases.advert_updated
     if is_new_products:
-        message_start = 'Появилось новое объявление'
+        msg_type = phrases.new_advert
 
     for product in product_infos:
-        message = dedent(f'''\
-        {message_start}
-        {product['title']}
-        Цена: {product['price']}
-        Дата публикации: {product['pub_date']}\n
-        Ссылка: {product['product_url']}
-        ''')
+        message = phrases.advert_message.format(
+            msg_type=msg_type, title=product['title'],
+            price=product['price'], pub_date=product['pub_date'],
+            url=product['product_url']
+        )
+
         await bot.send_photo(chat_id, product['img_url'], caption=message)
         db_aps.store_watched_product_info(product, chat_id, search_url)
         avito_parser_logger.debug(f'Sent product update to {chat_id}')
