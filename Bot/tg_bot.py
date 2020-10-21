@@ -303,7 +303,8 @@ async def handle_admin_users(callback: types.CallbackQuery):
     state=AdminPanel.waiting_admin_command)
 async def handle_admin_user_id(callback: types.CallbackQuery):
     """Handle user_id command and show user info."""
-    user_id = int(callback.data[len('user_id')+1:])  # data = user_id:123456
+    id_start_index = len('user_id') + 1  # data = user_id:123456
+    user_id = int(callback.data[id_start_index:])
     try:
         chat_info = await bot.get_chat(user_id)
     except BotBlocked:
