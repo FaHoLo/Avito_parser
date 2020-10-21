@@ -97,6 +97,7 @@ async def send_product_updates(bot: Bot, chat_id: str, product_infos: List[dict]
         await bot.send_photo(chat_id, product['img_url'], caption=message)
         db_aps.store_watched_product_info(product, chat_id, search_url)
         avito_parser_logger.debug(f'Sent product update to {chat_id}')
+        await sleep(0.3)
 
 
 async def parse_avito_products_update(url: str, user_id: str) -> Tuple[list, list]:
