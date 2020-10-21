@@ -43,7 +43,7 @@ def main():
     new_products, updated_products = parse_avito_products_update(url)
     print('New Products:')
     pprint(new_products)
-    print('_'*40, '\nUpdated products:')
+    print('_' * 40, '\nUpdated products:')
     pprint(updated_products)
 
 
