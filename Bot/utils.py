@@ -98,7 +98,10 @@ def get_random_proxy() -> str:
     """Get proxy from _registered_providers (exclude anonymity and country info)."""
     if not _registered_providers:
         parse_providers()
-    return str(_registered_providers.get_random_proxy()).split(' ')[0]  # type: ignore
+    proxy = _registered_providers.get_random_proxy()  # type: ignore # func parse_providers()
+    # updates _registered_providers, so it have no chance to be NoneType
+
+    return proxy.get_proxy()
 
 
 def parse_providers():
