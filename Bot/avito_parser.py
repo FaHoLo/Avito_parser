@@ -134,7 +134,7 @@ async def get_product_image_url(product_url: str) -> str:
         # so there is no gallery-img-frame in it.
         logger = utils.get_logger_bot()
         chat_id = os.environ.get('TG_LOG_CHAT_ID')
-        text = 'into_image_parse: ' + f'response.code: {response.status_code}'
+        text = f'into_image_parse: response.code: {response.status_code}\nurl: {product_url}'
         await utils.handle_exception('avito_parser_logger', text)
         try:
             await logger.send_document(chat_id, ('resp_text_page.html', response.text.encode()))
