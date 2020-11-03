@@ -204,7 +204,7 @@ async def show_admin_panel(message: types.Message):
     state=AdminPanel.waiting_admin_command)
 async def handle_admin_exit(callback: types.CallbackQuery, state: FSMContext):
     """Handle admin panel exit."""
-    state.finish()
+    await state.finish()
     await callback.answer(phrases.exit_admin)
     await callback.message.delete()
 
