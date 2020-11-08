@@ -63,7 +63,7 @@ async def start_parser(bot: Bot, sleep_time: int = 1800):
         await sleep(sleep_time)
 
 
-async def check_user_searches(user_id: str, user_searches: list, bot: Bot):
+async def check_user_searches(user_id: str, user_searches: set, bot: Bot):
     """Check user's searches and send new and updated products to him."""
     for url in user_searches:
         try:

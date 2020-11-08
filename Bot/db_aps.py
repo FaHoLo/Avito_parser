@@ -88,7 +88,7 @@ def collect_searches() -> dict:
     searches = {}
     for key in search_keys:
         user_id = key.split(':')[-1]
-        user_searches = [search_url.decode('utf-8') for search_url in db.hvals(key)]
+        user_searches = {search_url.decode('utf-8') for search_url in db.hvals(key)}
         searches[user_id] = user_searches
     db_logger.debug(f'Collected {len(searches)} searches')
     return searches
