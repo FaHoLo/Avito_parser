@@ -82,8 +82,7 @@ def collect_searches() -> dict:
     """Collect all existing searches from db."""
     db = get_database_connection()
     search_pattern = f'{DB_SEARCH_PREFIX}*'
-    # All scan methods returns cursor position and then list of keys: (0, [key1, key2])
-    search_keys = db.scan(0, match=search_pattern, count=10000)[1]
+    search_keys = db.keys(pattern=search_pattern)
     search_keys = [key.decode('utf-8') for key in search_keys]
     search_keys = remove_banned_users(search_keys)
     searches = {}
@@ -126,7 +125,7 @@ async def find_expired_products() -> None:
     """Find and remove expired products from db."""
     db = get_database_connection()
     products_pattern = f'{DB_PRODUCT_PREFIX}*'
-    product_keys = db.scan(0, match=products_pattern, count=1000)[1]
+    product_keys = db.keys(pattern=products_pattern)
     expired_keys = []
     for key in product_keys:
         try:
@@ -211,7 +210,7 @@ def remove_products_by_search_number(user_id: str, search_number: str):
     db = get_database_connection()
     search_url = db.hget(f'{DB_SEARCH_PREFIX}{user_id}', search_number)
     products_pattern = f'{DB_PRODUCT_PREFIX}{user_id}:*'
-    user_product_keys = db.scan(0, match=products_pattern, count=1000)[1]
+    user_product_keys = db.keys(pattern=products_pattern)
     keys_for_deletion = []
     for key in user_product_keys:
         if db.hget(key, 'search_url') == search_url:
@@ -263,7 +262,7 @@ def get_useful_db_info():
 def get_users() -> Tuple[int, ...]:
     """Count user ids in db."""
     db = get_database_connection()
-    user_searches = db.scan(0, match=f'{DB_SEARCH_PREFIX}*', count=10000)[1]
+    user_searches = db.keys(pattern=f'{DB_SEARCH_PREFIX}*')
     user_ids = [
         int(user_search.decode('utf-8').lstrip(DB_SEARCH_PREFIX))
         for user_search in user_searches
@@ -274,5 +273,5 @@ def get_users() -> Tuple[int, ...]:
 def get_user_products_amount(user_id: Union[str, int]) -> int:
     """Count user product keys."""
     db = get_database_connection()
-    product_keys = db.scan(0, match=f'{DB_PRODUCT_PREFIX}{user_id}:*', count=10000)[1]
+    product_keys = db.keys(pattern=f'{DB_PRODUCT_PREFIX}{user_id}:*')
     return len(product_keys)
