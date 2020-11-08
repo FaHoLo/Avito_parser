@@ -104,10 +104,8 @@ def remove_banned_users(search_keys: list) -> list:
         banned_users = banned_users.split(',')  # type: ignore
 
     for key in search_keys.copy():
-        for user_id in banned_users:
-            if user_id in key:
-                search_keys.remove(key)
-                break
+        if key in banned_users:
+            search_keys.remove(key)
     return search_keys
 
 
