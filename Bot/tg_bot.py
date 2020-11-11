@@ -268,7 +268,8 @@ async def handle_admin_users(callback: types.CallbackQuery):
 
     for user in user_ids[first_user_number:last_user_number]:
         chat_info = await bot.get_chat(user)
-        keyboard.insert(types.InlineKeyboardButton(chat_info.username,
+        username = chat_info.username if chat_info.username else chat_info.id
+        keyboard.insert(types.InlineKeyboardButton(username,
                                                    callback_data=f'user_id:{chat_info.id}'))
 
     if page != 0:
