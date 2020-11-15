@@ -1,13 +1,11 @@
 from asyncio import sleep
 import logging
 import os
-from pprint import pprint
 from random import randint
 from typing import Tuple, List
 
 from aiogram import Bot
 from bs4 import BeautifulSoup
-from dotenv import load_dotenv
 from httpx import StreamError
 
 import db_aps
@@ -30,21 +28,6 @@ SEARCH_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:79.0) Gecko/20100101 Firefox/79.0',
 }
 DEFAULT_IMG = 'https://upload.wikimedia.org/wikipedia/commons/8/84/Avito_logo1.png'
-
-
-def main():
-    """Parse new and updated products and print them."""
-    load_dotenv()
-    logging.basicConfig(
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        level='DEBUG'
-    )
-    url = os.getenv('SEARCH_URL')
-    new_products, updated_products = parse_avito_products_update(url)
-    print('New Products:')
-    pprint(new_products)
-    print('_' * 40, '\nUpdated products:')
-    pprint(updated_products)
 
 
 async def start_parser(bot: Bot, sleep_time: int = 1800):
