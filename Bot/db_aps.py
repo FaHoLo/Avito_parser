@@ -1,8 +1,9 @@
 from asyncio import sleep
+import json
 from logging import getLogger
 import os
 from random import randint
-from typing import Tuple, Union
+from typing import Tuple, Union, Optional
 
 import redis
 
@@ -15,6 +16,7 @@ _database = None
 
 DB_PRODUCT_PREFIX = 'avito:product_info:'
 DB_SEARCH_PREFIX = 'avito:user_search:'
+DB_LAUNCHED_SEARCHES = 'avito:launched_searches'
 PRODUCT_HEADERS = {
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
     'Accept-Encoding': 'gzip, deflate, br',
@@ -275,3 +277,58 @@ def get_user_products_amount(user_id: Union[str, int]) -> int:
     db = get_database_connection()
     product_keys = db.keys(pattern=f'{DB_PRODUCT_PREFIX}{user_id}:*')
     return len(product_keys)
+
+
+def add_launched_search(user_id: str, search_url: str):
+    """Add search url into launched searches.
+
+    We store launched searches separately from active user's searches,
+    so that we can launch coroutines of the search process
+    for newly added searches.
+    """
+    db = get_database_connection()
+    raw_launched_urls = db.hget(DB_LAUNCHED_SEARCHES, str(user_id))
+    if raw_launched_urls:
+        launched_urls = json.loads(raw_launched_urls)
+        launched_urls.append(search_url)
+    else:
+        launched_urls = [search_url]
+    db.hset(DB_LAUNCHED_SEARCHES, str(user_id), json.dumps(launched_urls))
+
+
+def get_launched_searches() -> Optional[dict]:
+    """Get all launched searches."""
+    db = get_database_connection()
+    raw_launched_searches = db.hgetall(DB_LAUNCHED_SEARCHES)
+
+    launched_searches = {
+        user_id.decode(): set(json.loads(search_urls))
+        for user_id, search_urls in raw_launched_searches.items()
+    }
+    return launched_searches
+
+
+def get_user_launched_searches(user_id: str) -> Optional[list]:
+    """Get user launched searches."""
+    db = get_database_connection()
+    raw_searches = db.hget(DB_LAUNCHED_SEARCHES, user_id)
+    if not raw_searches:
+        return None
+    return json.loads(raw_searches)
+
+
+def remove_launched_search(user_id: str, search_url: str):
+    """Remove search url from launched searches."""
+    db = get_database_connection()
+    raw_launched_urls = db.hget(DB_LAUNCHED_SEARCHES, user_id)
+    if not raw_launched_urls:
+        error_text = 'Tried to remove search url from empty user launched urls. ' + \
+            f'User id is {user_id}, search url is {search_url}'
+        db_logger.error(error_text)
+        return
+    launched_urls = json.loads(raw_launched_urls)
+    launched_urls.remove(search_url)
+    if not launched_urls:
+        db.hdel(DB_LAUNCHED_SEARCHES, str(user_id))
+        return
+    db.hset(DB_LAUNCHED_SEARCHES, str(user_id), json.dumps(launched_urls))
