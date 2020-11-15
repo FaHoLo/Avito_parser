@@ -139,5 +139,5 @@ async def make_get_request(url: str, headers: dict = None) -> Optional[httpx.Res
                 continue
             utils_logger.debug('Got right response')
             return response
-    utils_logger.warning('Made 100 requests, none of them ended well')
+    utils_logger.error(f'Made 100 requests, none of them ended well. Url: {url}')
     return None
