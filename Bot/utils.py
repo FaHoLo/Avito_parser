@@ -90,7 +90,7 @@ def get_user_agent_header(limit: int = 300) -> dict:
                                  operating_systems=operating_systems, limit=limit)
 
     user_agent = _user_agents.get_random_user_agent()
-    agent_header = {'UserAgent': user_agent}
+    agent_header = {'User-Agent': user_agent}
     return agent_header
 
 
