@@ -116,6 +116,7 @@ async def make_get_request(url: str, headers: dict = None) -> Optional[httpx.Res
     if not headers:
         headers = dict()
     for _ in range(100):
+        await sleep(3)
         agent_header = get_user_agent_header()
         headers.update(agent_header)
         proxies = {'https://': f'http://{get_random_proxy()}'}
