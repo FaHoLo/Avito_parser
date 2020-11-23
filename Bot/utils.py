@@ -121,7 +121,7 @@ async def make_get_request(url: str, headers: dict = None) -> Optional[httpx.Res
         proxies = {'https://': f'http://{get_random_proxy()}'}
         async with httpx.AsyncClient(headers=headers,
                                      proxies=proxies,  # type: ignore
-                                     timeout=10,
+                                     timeout=15,
                                      verify=False) as client:
             try:
                 utils_logger.debug(f'GET request for url: {url}')
