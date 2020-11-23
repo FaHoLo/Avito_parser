@@ -211,6 +211,7 @@ def remove_products_by_search_number(user_id: str, search_number: str):
     """Remove products of search."""
     db = get_database_connection()
     search_url = db.hget(f'{DB_SEARCH_PREFIX}{user_id}', search_number)
+    remove_launched_search(user_id, search_url.decode('utf-8'))
     products_pattern = f'{DB_PRODUCT_PREFIX}{user_id}:*'
     user_product_keys = db.keys(pattern=products_pattern)
     keys_for_deletion = []
