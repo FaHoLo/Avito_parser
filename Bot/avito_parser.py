@@ -110,8 +110,13 @@ async def get_product_image_url(product_url: str) -> str:
         return DEFAULT_IMG
 
     page_data = BeautifulSoup(response.text, 'lxml')
+    img_frame_selectors = ('.gallery-img-frame', '.image-frame-wrapper-2FMhm')
     try:
-        img_url = str(page_data.select_one('.gallery-img-frame')['data-url'])
+        for selector in img_frame_selectors:
+            img_url = page_data.select_one(selector)
+            if img_url:
+                break
+        img_url = str(img_url['data-url'])
     except TypeError:
         # Sometimes request fetch page with no product image,
         # so there is no gallery-img-frame in it.
