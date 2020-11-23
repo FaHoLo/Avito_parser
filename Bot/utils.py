@@ -3,6 +3,7 @@ from concurrent.futures._base import TimeoutError
 import datetime
 from logging import getLogger
 import os
+from random import randint
 from ssl import SSLError
 import traceback
 from typing import Optional, List
@@ -117,7 +118,7 @@ async def make_get_request(url: str, headers: dict = None) -> Optional[httpx.Res
     if not headers:
         headers = dict()
     for _ in range(100):
-        await sleep(3)
+        await sleep(randint(3, 10))
         agent_header = get_user_agent_header()
         headers.update(agent_header)
         proxies = {'https://': f'http://{get_random_proxy()}'}
