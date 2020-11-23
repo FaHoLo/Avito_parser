@@ -114,7 +114,6 @@ async def start_expired_products_collector(sleep_time: int = 43200):
     """Runs collector witch remove expired products from db."""
     while True:
         db_logger.debug('Starting new cycle stage of expired products collector')
-        utils.parse_providers()
         try:
             await find_expired_products()
         except Exception:

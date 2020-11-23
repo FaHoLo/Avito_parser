@@ -113,6 +113,12 @@ def parse_providers():
     _registered_providers.parse_providers()
 
 
+async def run_proxi_updater():
+    while True:
+        parse_providers()
+        await sleep(300)
+
+
 async def make_get_request(url: str, headers: dict = None) -> Optional[httpx.Response]:
     """Make async GET request with proxy."""
     if not headers:
