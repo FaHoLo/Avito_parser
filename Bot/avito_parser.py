@@ -2,7 +2,7 @@ from asyncio import sleep
 import logging
 import os
 from random import randint
-from typing import Tuple, List
+from typing import List
 
 from aiogram import Bot
 from bs4 import BeautifulSoup
@@ -30,76 +30,107 @@ SEARCH_HEADERS = {
 DEFAULT_IMG = 'https://upload.wikimedia.org/wikipedia/commons/8/84/Avito_logo1.png'
 
 
-async def start_parser(bot: Bot, sleep_time: int = 1800):
+async def start_parser(bot: Bot, sleep_time: int = 300):
     """Start parser avito parser.
 
     Parser gets search queries from db,
     checks them for updates and send updates to users.
     """
     bot.loop.create_task(utils.run_proxi_updater())
+    launched_searches = db_aps.get_launched_searches()
+    if launched_searches:
+        for user_id, user_searches in launched_searches.items():
+            for search in user_searches:
+                bot.loop.create_task(check_user_search(user_id, search, bot))
+
     while True:
         avito_parser_logger.debug('Starting new parser cycle stage')
-        searches = db_aps.collect_searches()
-        for user_id, user_searches in searches.items():
-            await check_user_searches(user_id, user_searches, bot)
-        avito_parser_logger.debug(f'All searches checked, parser start sleeping for {sleep_time}')
+        all_searches = db_aps.collect_searches()
+        launched_searches = db_aps.get_launched_searches()
+        if not launched_searches:
+            launched_searches = dict()
+        for user_id, user_searches in all_searches.items():
+            user_launched_searches = launched_searches.get(user_id, [])
+            for user_search in user_searches:
+                if user_search in user_launched_searches:
+                    continue
+                db_aps.add_launched_search(user_id, user_search)
+                print(dir(bot.loop.create_task(check_user_search(user_id, user_search, bot))))
+            await sleep(0)
+        avito_parser_logger.debug(
+            f'All new searches launched, parser start sleeping for {sleep_time}')
         await sleep(sleep_time)
 
 
-async def check_user_searches(user_id: str, user_searches: set, bot: Bot):
-    """Check user's searches and send new and updated products to him."""
-    for url in user_searches:
+async def check_user_search(user_id: str, search_url: str, bot: Bot):
+    """Check user's search and notify him about new and updated products."""
+    while True:
+        launched_searches = db_aps.get_user_launched_searches(user_id)
+        if not launched_searches:
+            return
+        if search_url not in launched_searches:
+            return
         try:
-            new_products, updated_products = await parse_avito_products_update(url, user_id)
-            await send_product_updates(bot, user_id, updated_products, url)
-            await send_product_updates(bot, user_id, new_products, url, is_new_products=True)
-            await sleep(randint(10, 20))
+            await parse_and_handle_avito_products_update(search_url, user_id, bot)
         except StreamError:
-            avito_parser_logger.debug(f'Got StreamError for {url}')
-            await sleep(randint(10, 20))
-            continue
+            avito_parser_logger.error(f'Got StreamError for {search_url}')
         except Exception:
             await utils.handle_exception('avito_parser_logger')
+        await sleep(randint(1200, 2400))
 
 
-async def send_product_updates(bot: Bot, chat_id: str, product_infos: List[dict],
-                               search_url: str, is_new_products: bool = False):
-    """Send user's products updates to him."""
-    msg_type = phrases.advert_updated
-    if is_new_products:
-        msg_type = phrases.new_advert
-
-    for product in product_infos:
-        message = phrases.advert_message.format(
-            msg_type=msg_type, title=product['title'],
-            price=product['price'], pub_date=product['pub_date'],
-            url=product['product_url']
-        )
-
-        await bot.send_photo(chat_id, product['img_url'], caption=message)
-        db_aps.store_watched_product_info(product, chat_id, search_url)
-        avito_parser_logger.debug(f'Sent product update to {chat_id}')
-        await sleep(0.3)
-
-
-async def parse_avito_products_update(url: str, user_id: str) -> Tuple[list, list]:
-    """Parse avito url and find new and updated products."""
-    avito_page = await get_avito_soup_page(url)
+async def parse_and_handle_avito_products_update(search_url: str, user_id: str,
+                                                 bot: Bot):
+    """Parse avito url, find new and updated products and send notify to user."""
+    avito_page = await get_avito_soup_page(search_url)
     if not avito_page:
         raise StreamError('Failed to download search page.')
     products = collect_products(avito_page)
     product_infos = parse_product_infos(products)
     new_products, updated_products = db_aps.find_new_and_updated_products(product_infos, user_id)
-    for products in (new_products, updated_products):
-        for product in products:
-            try:
-                product['img_url'] = await get_product_image_url(product['product_url'])
-            except Exception:  # Image parsing is now in debugging state
-                product['img_url'] = DEFAULT_IMG
-                await utils.handle_exception('avito_parser_logger', 'image_parse')
-                continue
+
+    product_coros = []
+    for product_info in new_products:
+        task = bot.loop.create_task(parse_img_and_send_product_update(bot, user_id,
+                                                                      product_info, search_url))
+        product_coros.append(task)
+    for product_info in updated_products:
+        task = bot.loop.create_task(parse_img_and_send_product_update(bot, user_id, product_info,
+                                                                      search_url, False))
+        product_coros.append(task)
+
+    while product_coros:
+        await sleep(60)
+        for coro in product_coros.copy():
+            if coro.done():
+                product_coros.remove(coro)
+            sleep(0)
     avito_parser_logger.debug('Products update had been parsed')
-    return new_products, updated_products
+
+
+async def parse_img_and_send_product_update(bot: Bot, user_id: str, product_info: dict,
+                                            search_url: str, is_new_product: bool = True):
+    """Get product image and send product info to user."""
+    msg_type = phrases.advert_updated
+    if is_new_product:
+        msg_type = phrases.new_advert
+
+    # TODO set product img url to db and check if it is already parsed
+    try:
+        product_info['img_url'] = await get_product_image_url(product_info['product_url'])
+    except Exception:  # Image parsing is now in debugging state
+        product_info['img_url'] = DEFAULT_IMG
+        await utils.handle_exception('avito_parser_logger', 'image_parse')
+
+    message = phrases.advert_message.format(
+        msg_type=msg_type, title=product_info['title'],
+        price=product_info['price'], pub_date=product_info['pub_date'],
+        url=product_info['product_url']
+    )
+
+    await bot.send_photo(user_id, product_info['img_url'], caption=message)
+    db_aps.store_watched_product_info(product_info, user_id, search_url)
+    avito_parser_logger.debug(f'Sent all product updates to {user_id}')
 
 
 async def get_product_image_url(product_url: str) -> str:
