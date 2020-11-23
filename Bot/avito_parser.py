@@ -181,7 +181,3 @@ def parse_product_infos(products: list) -> List[dict]:
         product_infos.append(product_info)
     avito_parser_logger.debug('Parsed product infos')
     return product_infos
-
-
-if __name__ == '__main__':
-    main()
