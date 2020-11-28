@@ -113,13 +113,13 @@ def remove_banned_users(search_keys: list) -> list:
 async def start_expired_products_collector(sleep_time: int = 43200):
     """Runs collector witch remove expired products from db."""
     while True:
+        await sleep(sleep_time)
         db_logger.debug('Starting new cycle stage of expired products collector')
         try:
             await find_expired_products()
         except Exception:
             await utils.handle_exception('expired_products_logger')
         db_logger.debug(f'Expired products collector starts sleeping for {sleep_time} sec')
-        await sleep(sleep_time)
 
 
 async def find_expired_products() -> None:
