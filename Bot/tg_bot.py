@@ -256,9 +256,9 @@ async def handle_admin_users(callback: types.CallbackQuery):
         page = 0
     else:
         # cb.data == users:1, where 1 - is page (starts from 0)
-        page = int(callback.data[len(users_callback):])
+        page = int(callback.data[len(users_callback)+1:])
     first_user_number = page * users_on_page
-    last_user_number = first_user_number + users_on_page
+    next_page_user_number = first_user_number + users_on_page
 
     user_ids = db_aps.get_users()
     users_amount = len(user_ids)
@@ -266,7 +266,7 @@ async def handle_admin_users(callback: types.CallbackQuery):
     keyboard = types.InlineKeyboardMarkup()
     keyboard.row_width = 2
 
-    for user in user_ids[first_user_number:last_user_number]:
+    for user in user_ids[first_user_number:next_page_user_number]:
         chat_info = await bot.get_chat(user)
         username = chat_info.username if chat_info.username else chat_info.id
         keyboard.insert(types.InlineKeyboardButton(username,
@@ -274,10 +274,10 @@ async def handle_admin_users(callback: types.CallbackQuery):
 
     if page != 0:
         keyboard.add(keyboards.get_pagination_button('previous', f'users:{page-1}'))
-    if last_user_number < users_amount and page != 0:
-        keyboard.insert(keyboards.get_pagination_button('next', f'users:{page-1}'))
-    if last_user_number < users_amount and page == 0:
-        keyboard.add(keyboards.get_pagination_button('next', f'users:{page-1}'))
+    if next_page_user_number < users_amount and page != 0:
+        keyboard.insert(keyboards.get_pagination_button('next', f'users:{page+1}'))
+    if next_page_user_number < users_amount and page == 0:
+        keyboard.add(keyboards.get_pagination_button('next', f'users:{page+1}'))
     keyboard.add(keyboards.admin_panel)
 
     await callback.answer(phrases.users_page.format(page=page + 1))
