@@ -138,7 +138,7 @@ async def make_get_request(url: str, headers: dict = None) -> Optional[httpx.Res
             except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout,
                     httpx.ReadError, httpx.RemoteProtocolError, httpx.ProxyError,
                     httpx.TimeoutException, TimeoutError, ConnectionResetError,
-                    SSLError, httpx.WriteError) as e:
+                    SSLError, httpx.WriteError, httpx.DecodingError) as e:
                 utils_logger.debug(f'Got exception while GET request: {e}')
                 continue
             try:
